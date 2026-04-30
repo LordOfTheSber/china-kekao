@@ -1,0 +1,17 @@
+spring:
+  jpa:
+    properties:
+      hibernate.jdbc.batch_size: 50
+  flyway:
+    clean-disabled: true
+
+server:
+  forward-headers-strategy: framework
+  tomcat:
+    accesslog:
+      enabled: false
+
+logging:
+  level:
+    root: INFO
+    dev.kekao: INFO

@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kekao-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kekao}
+      POSTGRES_USER: ${POSTGRES_USER:-kekao}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kekao}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kekao} -d ${POSTGRES_DB:-kekao}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kekao-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-kekao}
+      DB_USERNAME: ${POSTGRES_USER:-kekao}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-kekao}
+      SERVER_PORT: 8080
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  frontend:
+    image: node:20-alpine
+    container_name: kekao-frontend
+    profiles: ["frontend"]
+    working_dir: /app
+    command: sh -c "echo 'Frontend will be wired up in TASK-017' && tail -f /dev/null"
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
