@@ -2,6 +2,7 @@ package dev.kekao.migration;
 
 import dev.kekao.AbstractPostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * data model has been introduced without updating the migration script.
  */
 @SpringBootTest
+@EnabledIf(value = "dev.kekao.DockerAvailability#isAvailable",
+        disabledReason = "Docker daemon is not available; integration tests skipped")
 class SchemaMigrationIntegrationTest extends AbstractPostgresIntegrationTest {
 
     private static final List<String> EXPECTED_INDEXES = List.of(

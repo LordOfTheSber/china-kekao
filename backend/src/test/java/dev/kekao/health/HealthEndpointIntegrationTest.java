@@ -2,6 +2,7 @@ package dev.kekao.health;
 
 import dev.kekao.AbstractPostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -16,6 +17,8 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@EnabledIf(value = "dev.kekao.DockerAvailability#isAvailable",
+        disabledReason = "Docker daemon is not available; integration tests skipped")
 class HealthEndpointIntegrationTest extends AbstractPostgresIntegrationTest {
 
     @Autowired

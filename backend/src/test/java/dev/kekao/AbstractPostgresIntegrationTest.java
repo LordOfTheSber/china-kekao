@@ -11,6 +11,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * instance. The container is reused across the whole test suite via the
  * static field, which keeps the build fast while still exercising real
  * Flyway migrations against the production-grade database engine.
+ *
+ * <p>Concrete subclasses MUST be annotated with {@code @EnabledIf(
+ * "dev.kekao.DockerAvailability#isAvailable")} so that environments
+ * without Docker skip the suite instead of failing the build.</p>
  */
 @Testcontainers
 public abstract class AbstractPostgresIntegrationTest {
