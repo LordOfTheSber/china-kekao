@@ -40,6 +40,12 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Round-trip CRUD checks for every JPA entity introduced in TASK-004.
+ * Exercising real PostgreSQL via Testcontainers gives us coverage for
+ * {@code text[]} and {@code jsonb} mappings that an in-memory database
+ * cannot validate.
+ */
 @SpringBootTest
 @Transactional
 @EnabledIf(value = "dev.kekao.DockerAvailability#isAvailable",
@@ -57,6 +63,101 @@ class EntityCrudIntegrationTest extends AbstractPostgresIntegrationTest {
     @Autowired private UserCardRepository userCards;
     @Autowired private ReviewLogRepository reviewLogs;
 
+    @Test
+    void userCrud() {
+        UserEntity created = persistUser("a@b.com");
+
+        assertThat(created.getId()).isNotNull();
+        assertThat(users.findByEmail("a@b.com")).isPresent();
+        assertThat(users.existsByEmail("a@b.com")).isTrue();
+
+        created.setRole(UserRole.ROLE_ADMIN);
+        users.saveAndFlush(created);
+        assertThat(users.findById(created.getId()).orElseThrow().getRole())
+                .isEqualTo(UserRole.ROLE_ADMIN);
+
+        users.delete(created);
+        assertThat(users.findByEmail("a@b.com")).isEmpty();
+    }
+
+    @Test
+    void refreshTokenCrud() {
+        UserEntity owner = persistUser("rt@b.com");
+        RefreshTokenEntity stored = refreshTokens.save(buildRefreshToken(owner, "hash-rt"));
+
+        assertThat(refreshTokens.findByTokenHash("hash-rt"))
+                .map(RefreshTokenEntity::getId)
+                .contains(stored.getId());
+
+        int revokedCount = refreshTokens.revokeAllForUser(owner.getId());
+        refreshTokens.flush();
+        assertThat(revokedCount).isEqualTo(1);
+        assertThat(refreshTokens.findByTokenHash("hash-rt")
+                .orElseThrow().isRevoked()).isTrue();
+    }
+
+    @Test
+    void hanziWithTranslationsAndExamples() {
+        HanziEntity character = persistHanzi("你");
+        translations.save(HanziTranslationEntity.builder()
+                .hanzi(character).language("en")
+                .meanings(List.of("you", "thou")).primary(true).build());
+        examples.save(HanziExampleEntity.builder()
+                .hanzi(character).language("en")
+                .sentence("你好").pinyin("nǐ hǎo").translation("hello").build());
+
+        List<HanziTranslationEntity> savedTranslations =
+                translations.findByHanziId(character.getId());
+        assertThat(savedTranslations).singleElement()
+                .extracting(HanziTranslationEntity::getMeanings)
+                .isEqualTo(List.of("you", "thou"));
+        assertThat(examples.findByHanziId(character.getId())).hasSize(1);
+    }
+
+    @Test
+    void deckAndDeckHanzi() {
+        DeckEntity deck = decks.save(buildDeck("hsk-1", true));
+        HanziEntity character = persistHanzi("好");
+        DeckHanziId membershipId = new DeckHanziId(deck.getId(), character.getId());
+
+        deckHanzi.save(DeckHanziEntity.builder()
+                .id(membershipId).deck(deck).hanzi(character).position(1).build());
+
+        assertThat(deckHanzi.findById(membershipId)).isPresent();
+        assertThat(deckHanzi.findByDeckIdOrderByPositionAsc(deck.getId()))
+                .singleElement()
+                .extracting(DeckHanziEntity::getPosition).isEqualTo(1);
+    }
+
+    @Test
+    void userDeckSubscription() {
+        UserEntity subscriber = persistUser("ud@b.com");
+        DeckEntity deck = decks.save(buildDeck("custom", false));
+
+        userDecks.save(UserDeckEntity.builder()
+                .id(new UserDeckId(subscriber.getId(), deck.getId()))
+                .user(subscriber).deck(deck).build());
+
+        assertThat(userDecks.findByUserId(subscriber.getId())).hasSize(1);
+    }
+
+    @Test
+    void userCardAndReviewLog() {
+        UserEntity owner = persistUser("uc@b.com");
+        HanziEntity character = persistHanzi("学");
+        UserCardEntity card = userCards.save(buildUserCard(owner, character));
+
+        assertThat(userCards.findByUserIdAndHanziIdAndMode(
+                owner.getId(), character.getId(), StudyMode.RECOGNITION))
+                .map(UserCardEntity::getId)
+                .contains(card.getId());
+
+        reviewLogs.save(buildReviewLog(card));
+
+        assertThat(reviewLogs.findByUserCardIdOrderByReviewedAtAsc(card.getId()))
+                .hasSize(1);
+    }
+
     private UserEntity persistUser(String email) {
         return users.save(UserEntity.builder()
                 .email(email)
@@ -66,137 +167,55 @@ class EntityCrudIntegrationTest extends AbstractPostgresIntegrationTest {
                 .build());
     }
 
-    private HanziEntity persistHanzi(String c) {
+    private HanziEntity persistHanzi(String character) {
         return hanzi.save(HanziEntity.builder()
-                .character(c)
+                .character(character)
                 .pinyin("nǐ")
                 .hskLevel((short) 1)
-                .status(HanziStatus.DRAFT)
                 .strokeCount((short) 7)
+                .status(HanziStatus.DRAFT)
                 .build());
     }
 
-    @Test
-    void userCrud() {
-        UserEntity u = persistUser("a@b.com");
-        assertThat(u.getId()).isNotNull();
-        assertThat(users.findByEmail("a@b.com")).isPresent();
-        assertThat(users.existsByEmail("a@b.com")).isTrue();
-        u.setRole(UserRole.ROLE_ADMIN);
-        users.saveAndFlush(u);
-        assertThat(users.findById(u.getId()).orElseThrow().getRole()).isEqualTo(UserRole.ROLE_ADMIN);
-        users.delete(u);
-        assertThat(users.findByEmail("a@b.com")).isEmpty();
-    }
-
-    @Test
-    void refreshTokenCrud() {
-        UserEntity u = persistUser("rt@b.com");
-        RefreshTokenEntity rt = refreshTokens.save(RefreshTokenEntity.builder()
-                .tokenHash("hash-" + System.nanoTime())
-                .user(u)
+    private RefreshTokenEntity buildRefreshToken(UserEntity owner, String tokenHash) {
+        return RefreshTokenEntity.builder()
+                .tokenHash(tokenHash)
+                .user(owner)
                 .expiresAt(Instant.now().plus(7, ChronoUnit.DAYS))
                 .revoked(false)
-                .build());
-        assertThat(refreshTokens.findByTokenHash(rt.getTokenHash())).isPresent();
-        refreshTokens.revokeAllForUser(u.getId());
-        refreshTokens.flush();
-        RefreshTokenEntity reloaded = refreshTokens.findById(rt.getId()).orElseThrow();
-        // detach + reload
-        assertThat(refreshTokens.findByTokenHash(rt.getTokenHash())).isPresent();
+                .build();
     }
 
-    @Test
-    void hanziWithTranslationsAndExamples() {
-        HanziEntity h = persistHanzi("你");
-        HanziTranslationEntity t = translations.save(HanziTranslationEntity.builder()
-                .hanzi(h)
-                .language("en")
-                .meanings(List.of("you", "thou"))
-                .primary(true)
-                .build());
-        assertThat(translations.findByHanziId(h.getId())).hasSize(1);
-        assertThat(translations.findById(t.getId()).orElseThrow().getMeanings()).containsExactly("you", "thou");
-
-        HanziExampleEntity e = examples.save(HanziExampleEntity.builder()
-                .hanzi(h)
-                .language("en")
-                .sentence("你好")
-                .pinyin("nǐ hǎo")
-                .translation("hello")
-                .build());
-        assertThat(examples.findByHanziId(h.getId())).hasSize(1);
-        assertThat(examples.findById(e.getId())).isPresent();
+    private DeckEntity buildDeck(String slugPrefix, boolean system) {
+        return DeckEntity.builder()
+                .name(slugPrefix.toUpperCase())
+                .slug(slugPrefix + "-" + System.nanoTime())
+                .system(system)
+                .description("test deck")
+                .build();
     }
 
-    @Test
-    void deckAndDeckHanzi() {
-        DeckEntity d = decks.save(DeckEntity.builder()
-                .name("HSK 1")
-                .slug("hsk-1-" + System.nanoTime())
-                .system(true)
-                .description("HSK level 1")
-                .build());
-        HanziEntity h = persistHanzi("好");
-        DeckHanziEntity dh = deckHanzi.save(DeckHanziEntity.builder()
-                .id(new DeckHanziId(d.getId(), h.getId()))
-                .deck(d)
-                .hanzi(h)
-                .position(1)
-                .build());
-        assertThat(deckHanzi.findByDeckIdOrderByPositionAsc(d.getId())).hasSize(1);
-        assertThat(deckHanzi.findById(dh.getId())).isPresent();
-    }
-
-    @Test
-    void userDeckSubscription() {
-        UserEntity u = persistUser("ud@b.com");
-        DeckEntity d = decks.save(DeckEntity.builder()
-                .name("Custom").slug("custom-" + System.nanoTime()).system(false).build());
-        userDecks.save(UserDeckEntity.builder()
-                .id(new UserDeckId(u.getId(), d.getId()))
-                .user(u)
-                .deck(d)
-                .build());
-        assertThat(userDecks.findByUserId(u.getId())).hasSize(1);
-    }
-
-    @Test
-    void userCardAndReviewLog() {
-        UserEntity u = persistUser("uc@b.com");
-        HanziEntity h = persistHanzi("学");
-        UserCardEntity card = userCards.save(UserCardEntity.builder()
-                .user(u)
-                .hanzi(h)
-                .mode(StudyMode.RECOGNITION)
-                .state(CardState.NEW)
-                .stability(0)
-                .difficulty(0)
+    private UserCardEntity buildUserCard(UserEntity owner, HanziEntity character) {
+        return UserCardEntity.builder()
+                .user(owner).hanzi(character)
+                .mode(StudyMode.RECOGNITION).state(CardState.NEW)
+                .stability(0).difficulty(0)
                 .dueDate(Instant.now())
-                .reps(0)
-                .lapses(0)
-                .elapsedDays(0)
-                .scheduledDays(0)
+                .reps(0).lapses(0)
+                .elapsedDays(0).scheduledDays(0)
                 .algorithmVersion("FSRS-5")
-                .build());
+                .build();
+    }
 
-        assertThat(userCards.findByUserIdAndHanziIdAndMode(u.getId(), h.getId(), StudyMode.RECOGNITION))
-                .isPresent();
-
-        ReviewLogEntity log = reviewLogs.save(ReviewLogEntity.builder()
+    private ReviewLogEntity buildReviewLog(UserCardEntity card) {
+        return ReviewLogEntity.builder()
                 .userCard(card)
                 .rating((short) 3)
                 .stateBefore(CardState.NEW)
-                .elapsedDays(0)
-                .scheduledDays(1)
-                .stabilityBefore(0)
-                .difficultyBefore(0)
+                .elapsedDays(0).scheduledDays(1)
+                .stabilityBefore(0).difficultyBefore(0)
                 .responseTimeMs(1234)
-                .hintCount((short) 0)
-                .strokeMistakes((short) 0)
-                .build());
-
-        assertThat(reviewLogs.findByUserCardIdOrderByReviewedAtAsc(card.getId())).hasSize(1);
-        assertThat(reviewLogs.findById(log.getId())).isPresent();
+                .hintCount((short) 0).strokeMistakes((short) 0)
+                .build();
     }
 }
