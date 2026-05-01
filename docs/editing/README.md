@@ -87,18 +87,25 @@ UPDATE hanzi
 
 ## 3. Importing the starter catalogue
 
-The hanzi importer (TASK-006) is wired as a Spring Boot CLI runner under the
-`import` profile. Download a CC-CEDICT dump from
-[MDBG](https://www.mdbg.net/chinese/dictionary?page=cc-cedict), then:
+The hanzi importer (TASK-006) is wired as a Spring Boot CLI runner. Download a
+CC-CEDICT dump from
+[MDBG](https://www.mdbg.net/chinese/dictionary?page=cc-cedict), then trigger
+the runner one of two ways:
 
 ```bash
+# A) Activate the `import` profile.
 java -jar china-kekao-backend.jar \
   --spring.profiles.active=import \
-  --kekao.import.cedict-path=/data/cedict_ts.u8 \
-  --kekao.import.hsk-levels=1
+  --kekao.import.cedict-path=/data/cedict_ts.u8
+
+# B) Or keep your normal profile and pass an explicit flag.
+java -jar china-kekao-backend.jar \
+  --kekao.import.run=true \
+  --kekao.import.cedict-path=/data/cedict_ts.u8
 ```
 
 If `--kekao.import.cedict-path` is omitted, the runner falls back to the
 bundled `imports/cedict.sample.txt` resource (good for smoke tests, not for
 production seeding). All imported rows land in `status = 'DRAFT'` so editors
-can review before publishing.
+can review before publishing. The runner logs `Starting hanzi import...` at
+INFO when triggered; if you don't see that line, the trigger didn't fire.
