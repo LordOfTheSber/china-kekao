@@ -46,3 +46,14 @@ logging:
     root: INFO
     dev.kekao: ${LOG_LEVEL_APP:INFO}
     org.hibernate.SQL: WARN
+
+kekao:
+  auth:
+    access-token-ttl: ${JWT_ACCESS_TTL:PT15M}
+    refresh-token-ttl: ${JWT_REFRESH_TTL:P30D}
+    issuer: ${JWT_ISSUER:china-kekao}
+    private-key: ${JWT_PRIVATE_KEY:}
+    public-key: ${JWT_PUBLIC_KEY:}
+    rate-limit:
+      capacity: ${AUTH_RL_CAPACITY:5}
+      window: ${AUTH_RL_WINDOW:PT15M}
