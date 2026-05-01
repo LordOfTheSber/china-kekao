@@ -7,6 +7,7 @@ import dev.kekao.hanzi.HanziTranslationEntity;
 import dev.kekao.hanzi.HanziTranslationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +52,7 @@ public class HanziImportService {
     private final CedictParser parser;
     private final HskListLoader hskLoader;
 
+    @Autowired
     public HanziImportService(HanziRepository hanzi,
                               HanziTranslationRepository translations,
                               ImportProperties props) {
