@@ -6,6 +6,8 @@ import dev.kekao.hanzi.HanziRepository;
 import dev.kekao.hanzi.HanziStatus;
 import dev.kekao.hanzi.HanziTranslationEntity;
 import dev.kekao.hanzi.HanziTranslationRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,17 @@ class HanziImportIntegrationTest extends AbstractPostgresIntegrationTest {
     @Autowired private HanziImportService service;
     @Autowired private HanziRepository hanzi;
     @Autowired private HanziTranslationRepository translations;
+
+    @BeforeEach
+    @AfterEach
+    void cleanCatalogue() {
+        // The Postgres testcontainer is shared across @SpringBootTest classes,
+        // and runImport() commits its own transaction. Wipe the catalogue
+        // before and after each test so other suites don't trip on duplicate
+        // characters and our assertions see a deterministic baseline.
+        translations.deleteAll();
+        hanzi.deleteAll();
+    }
 
     @Test
     void importPopulatesHsk1FromBundledSources() throws Exception {
