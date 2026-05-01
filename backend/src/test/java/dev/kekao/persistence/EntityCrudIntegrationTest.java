@@ -90,7 +90,7 @@ class EntityCrudIntegrationTest extends AbstractPostgresIntegrationTest {
                 .contains(stored.getId());
 
         int revokedCount = refreshTokens.revokeAllForUser(owner.getId());
-        refreshTokens.flush();
+
         assertThat(revokedCount).isEqualTo(1);
         assertThat(refreshTokens.findByTokenHash("hash-rt")
                 .orElseThrow().isRevoked()).isTrue();
