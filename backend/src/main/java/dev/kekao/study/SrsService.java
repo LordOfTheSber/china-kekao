@@ -70,11 +70,12 @@ public class SrsService {
         card.setScheduledDays(result.scheduledDays());
         card.setAlgorithmVersion(ALGORITHM_VERSION);
         card.setReps(state.reps() + 1);
-        card.setLapses(nextLapses(card.getLapses(), rating));
+        card.setLapses(nextLapses(card.getLapses(), state.state(), rating));
     }
 
-    private int nextLapses(int currentLapses, Rating rating) {
-        return rating == Rating.AGAIN ? currentLapses + 1 : currentLapses;
+    private int nextLapses(int currentLapses, dev.kekao.study.srs.CardState previousState, Rating rating) {
+        boolean failedReviewCard = rating == Rating.AGAIN && previousState != dev.kekao.study.srs.CardState.NEW;
+        return failedReviewCard ? currentLapses + 1 : currentLapses;
     }
 
     private void persistReviewLog(
