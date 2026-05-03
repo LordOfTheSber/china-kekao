@@ -56,4 +56,35 @@ public interface UserCardRepository extends JpaRepository<UserCardEntity, Long> 
     List<UserCardEntity> findCardsInStateForUser(@Param("userId") Long userId,
                                                  @Param("state") CardState state,
                                                  Pageable pageable);
+
+    @Query("""
+            SELECT COUNT(uc) FROM UserCardEntity uc
+            WHERE uc.user.id = :userId
+              AND uc.state <> :excludedState
+              AND uc.dueDate <= :now
+              AND EXISTS (
+                  SELECT 1 FROM DeckHanziEntity dh, UserDeckEntity ud
+                  WHERE dh.deck.id = ud.deck.id
+                    AND dh.hanzi.id = uc.hanzi.id
+                    AND ud.user.id = :userId
+              )
+            """)
+    long countDueReviewCardsForUser(@Param("userId") Long userId,
+                                    @Param("excludedState") CardState excludedState,
+                                    @Param("now") Instant now);
+
+    @Query("""
+            SELECT COUNT(uc) FROM UserCardEntity uc
+            WHERE uc.user.id = :userId
+              AND uc.state = :state
+              AND EXISTS (
+                  SELECT 1 FROM DeckHanziEntity dh, UserDeckEntity ud
+                  WHERE dh.deck.id = ud.deck.id
+                    AND dh.hanzi.id = uc.hanzi.id
+                    AND ud.user.id = :userId
+              )
+            """)
+    long countCardsInStateForUser(@Param("userId") Long userId, @Param("state") CardState state);
+
+    long countByUserIdAndState(Long userId, CardState state);
 }
