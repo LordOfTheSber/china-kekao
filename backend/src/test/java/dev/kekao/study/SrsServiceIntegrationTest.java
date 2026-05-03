@@ -78,7 +78,7 @@ class SrsServiceIntegrationTest extends AbstractPostgresIntegrationTest {
         assertThat(updated.getState()).isEqualTo(CardState.valueOf(result.state().name()));
         assertThat(updated.getStability()).isEqualTo(result.stability());
         assertThat(updated.getDifficulty()).isEqualTo(result.difficulty());
-        assertThat(updated.getDueDate()).isEqualTo(result.nextDue());
+        assertThat(truncateToMicros(updated.getDueDate())).isEqualTo(truncateToMicros(result.nextDue()));
         assertThat(updated.getLastReview()).isNotNull();
         assertThat(updated.getReps()).isEqualTo(1);
         assertThat(updated.getLapses()).isEqualTo(0);
@@ -98,5 +98,9 @@ class SrsServiceIntegrationTest extends AbstractPostgresIntegrationTest {
                     assertThat(log.getStrokeMistakes()).isEqualTo((short) 0);
                     assertThat(log.getReviewedAt()).isNotNull();
                 });
+    }
+
+    private Instant truncateToMicros(Instant value) {
+        return value.truncatedTo(ChronoUnit.MICROS);
     }
 }
