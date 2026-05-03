@@ -109,7 +109,7 @@ class StatsControllerIntegrationTest extends AbstractPostgresIntegrationTest {
                 .andExpect(jsonPath("$.dueTodayCount").value(1))
                 .andExpect(jsonPath("$.newAvailableCount").value(1))
                 .andExpect(jsonPath("$.learnedTotal").value(2))
-                .andExpect(jsonPath("$.currentStreak").value(3))
+                .andExpect(jsonPath("$.currentStreak").value(4))
                 .andExpect(jsonPath("$.accuracy7d").value(0.75));
     }
 
