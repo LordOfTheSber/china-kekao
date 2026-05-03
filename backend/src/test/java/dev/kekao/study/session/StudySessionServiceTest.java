@@ -58,19 +58,19 @@ class StudySessionServiceTest {
     @Test
     void usesDefaultLimitsWhenSettingsMissing() {
         givenUser(new HashMap<>());
-        when(userCards.findDueReviewCardsForUser(eq(USER_ID), eq(FIXED_NOW), any(Pageable.class)))
+        when(userCards.findDueReviewCardsForUser(eq(USER_ID), eq(CardState.NEW), eq(FIXED_NOW), any(Pageable.class)))
                 .thenReturn(List.of());
-        when(userCards.findNewCardsForUser(eq(USER_ID), any(Pageable.class)))
+        when(userCards.findCardsInStateForUser(eq(USER_ID), eq(CardState.NEW), any(Pageable.class)))
                 .thenReturn(List.of());
 
         service.getTodayQueue(USER_ID);
 
         ArgumentCaptor<Pageable> reviewPage = ArgumentCaptor.forClass(Pageable.class);
-        verify(userCards).findDueReviewCardsForUser(eq(USER_ID), eq(FIXED_NOW), reviewPage.capture());
+        verify(userCards).findDueReviewCardsForUser(eq(USER_ID), eq(CardState.NEW), eq(FIXED_NOW), reviewPage.capture());
         assertThat(reviewPage.getValue().getPageSize()).isEqualTo(StudySessionService.DEFAULT_MAX_REVIEWS_PER_DAY);
 
         ArgumentCaptor<Pageable> newPage = ArgumentCaptor.forClass(Pageable.class);
-        verify(userCards).findNewCardsForUser(eq(USER_ID), newPage.capture());
+        verify(userCards).findCardsInStateForUser(eq(USER_ID), eq(CardState.NEW), newPage.capture());
         assertThat(newPage.getValue().getPageSize()).isEqualTo(StudySessionService.DEFAULT_NEW_PER_DAY);
     }
 
@@ -80,19 +80,19 @@ class StudySessionServiceTest {
                 StudySessionService.SETTING_NEW_PER_DAY, 5,
                 StudySessionService.SETTING_MAX_REVIEWS_PER_DAY, 10
         ));
-        when(userCards.findDueReviewCardsForUser(eq(USER_ID), eq(FIXED_NOW), any(Pageable.class)))
+        when(userCards.findDueReviewCardsForUser(eq(USER_ID), eq(CardState.NEW), eq(FIXED_NOW), any(Pageable.class)))
                 .thenReturn(List.of());
-        when(userCards.findNewCardsForUser(eq(USER_ID), any(Pageable.class)))
+        when(userCards.findCardsInStateForUser(eq(USER_ID), eq(CardState.NEW), any(Pageable.class)))
                 .thenReturn(List.of());
 
         service.getTodayQueue(USER_ID);
 
         ArgumentCaptor<Pageable> reviewPage = ArgumentCaptor.forClass(Pageable.class);
-        verify(userCards).findDueReviewCardsForUser(eq(USER_ID), eq(FIXED_NOW), reviewPage.capture());
+        verify(userCards).findDueReviewCardsForUser(eq(USER_ID), eq(CardState.NEW), eq(FIXED_NOW), reviewPage.capture());
         assertThat(reviewPage.getValue().getPageSize()).isEqualTo(10);
 
         ArgumentCaptor<Pageable> newPage = ArgumentCaptor.forClass(Pageable.class);
-        verify(userCards).findNewCardsForUser(eq(USER_ID), newPage.capture());
+        verify(userCards).findCardsInStateForUser(eq(USER_ID), eq(CardState.NEW), newPage.capture());
         assertThat(newPage.getValue().getPageSize()).isEqualTo(5);
     }
 
@@ -106,8 +106,8 @@ class StudySessionServiceTest {
         List<UserCardEntity> queue = service.getTodayQueue(USER_ID);
 
         assertThat(queue).isEmpty();
-        verify(userCards, never()).findDueReviewCardsForUser(any(), any(), any());
-        verify(userCards, never()).findNewCardsForUser(any(), any());
+        verify(userCards, never()).findDueReviewCardsForUser(any(), any(), any(), any());
+        verify(userCards, never()).findCardsInStateForUser(any(), any(), any());
     }
 
     @Test
@@ -115,9 +115,9 @@ class StudySessionServiceTest {
         givenUser(new HashMap<>());
         UserCardEntity review = card(1L, 100L, StudyMode.RECOGNITION, CardState.REVIEW);
         UserCardEntity newCard = card(2L, 200L, StudyMode.RECOGNITION, CardState.NEW);
-        when(userCards.findDueReviewCardsForUser(eq(USER_ID), eq(FIXED_NOW), any(Pageable.class)))
+        when(userCards.findDueReviewCardsForUser(eq(USER_ID), eq(CardState.NEW), eq(FIXED_NOW), any(Pageable.class)))
                 .thenReturn(List.of(review));
-        when(userCards.findNewCardsForUser(eq(USER_ID), any(Pageable.class)))
+        when(userCards.findCardsInStateForUser(eq(USER_ID), eq(CardState.NEW), any(Pageable.class)))
                 .thenReturn(List.of(newCard));
 
         List<UserCardEntity> queue = service.getTodayQueue(USER_ID);
@@ -135,9 +135,9 @@ class StudySessionServiceTest {
         UserCardEntity b2 = card(4L, 200L, StudyMode.PRODUCTION, CardState.REVIEW);
         UserCardEntity c1 = card(5L, 300L, StudyMode.RECOGNITION, CardState.REVIEW);
         UserCardEntity c2 = card(6L, 300L, StudyMode.PRODUCTION, CardState.REVIEW);
-        when(userCards.findDueReviewCardsForUser(eq(USER_ID), eq(FIXED_NOW), any(Pageable.class)))
+        when(userCards.findDueReviewCardsForUser(eq(USER_ID), eq(CardState.NEW), eq(FIXED_NOW), any(Pageable.class)))
                 .thenReturn(new ArrayList<>(List.of(a1, a2, b1, b2, c1, c2)));
-        when(userCards.findNewCardsForUser(eq(USER_ID), any(Pageable.class)))
+        when(userCards.findCardsInStateForUser(eq(USER_ID), eq(CardState.NEW), any(Pageable.class)))
                 .thenReturn(List.of());
 
         List<UserCardEntity> queue = service.getTodayQueue(USER_ID);

@@ -16,43 +16,44 @@ public interface UserCardRepository extends JpaRepository<UserCardEntity, Long> 
     List<UserCardEntity> findByUserIdAndDueDateLessThanEqual(Long userId, Instant due);
 
     /**
-     * Cards in subscribed decks that are due for review (any non-NEW state).
+     * Cards in subscribed decks that are due for review (any state except {@code NEW}).
      * Ordered by due date ascending so the most overdue surface first.
      */
     @Query("""
             SELECT uc FROM UserCardEntity uc
             WHERE uc.user.id = :userId
-              AND uc.state <> dev.kekao.study.CardState.NEW
+              AND uc.state <> :excludedState
               AND uc.dueDate <= :now
-              AND uc.hanzi.id IN (
-                  SELECT dh.hanzi.id FROM DeckHanziEntity dh
-                  WHERE dh.deck.id IN (
-                      SELECT ud.deck.id FROM UserDeckEntity ud
-                      WHERE ud.user.id = :userId
-                  )
+              AND EXISTS (
+                  SELECT 1 FROM DeckHanziEntity dh, UserDeckEntity ud
+                  WHERE dh.deck.id = ud.deck.id
+                    AND dh.hanzi.id = uc.hanzi.id
+                    AND ud.user.id = :userId
               )
             ORDER BY uc.dueDate ASC, uc.id ASC
             """)
     List<UserCardEntity> findDueReviewCardsForUser(@Param("userId") Long userId,
+                                                   @Param("excludedState") CardState excludedState,
                                                    @Param("now") Instant now,
                                                    Pageable pageable);
 
     /**
-     * NEW-state cards in subscribed decks, ordered by deck position then id so the queue
-     * is stable across calls.
+     * Cards in the given state that belong to the user's subscribed decks. Used to surface
+     * NEW-state cards for the daily queue.
      */
     @Query("""
             SELECT uc FROM UserCardEntity uc
             WHERE uc.user.id = :userId
-              AND uc.state = dev.kekao.study.CardState.NEW
-              AND uc.hanzi.id IN (
-                  SELECT dh.hanzi.id FROM DeckHanziEntity dh
-                  WHERE dh.deck.id IN (
-                      SELECT ud.deck.id FROM UserDeckEntity ud
-                      WHERE ud.user.id = :userId
-                  )
+              AND uc.state = :state
+              AND EXISTS (
+                  SELECT 1 FROM DeckHanziEntity dh, UserDeckEntity ud
+                  WHERE dh.deck.id = ud.deck.id
+                    AND dh.hanzi.id = uc.hanzi.id
+                    AND ud.user.id = :userId
               )
             ORDER BY uc.id ASC
             """)
-    List<UserCardEntity> findNewCardsForUser(@Param("userId") Long userId, Pageable pageable);
+    List<UserCardEntity> findCardsInStateForUser(@Param("userId") Long userId,
+                                                 @Param("state") CardState state,
+                                                 Pageable pageable);
 }

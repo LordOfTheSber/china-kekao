@@ -1,5 +1,6 @@
 package dev.kekao.study.session;
 
+import dev.kekao.study.CardState;
 import dev.kekao.study.UserCardEntity;
 import dev.kekao.study.UserCardRepository;
 import dev.kekao.user.UserEntity;
@@ -60,10 +61,12 @@ public class StudySessionService {
         Instant now = Instant.now(clock);
         List<UserCardEntity> reviews = maxReviewsPerDay <= 0
                 ? List.of()
-                : userCards.findDueReviewCardsForUser(userId, now, PageRequest.of(0, maxReviewsPerDay));
+                : userCards.findDueReviewCardsForUser(userId, CardState.NEW, now,
+                        PageRequest.of(0, maxReviewsPerDay));
         List<UserCardEntity> news = newPerDay <= 0
                 ? List.of()
-                : userCards.findNewCardsForUser(userId, PageRequest.of(0, newPerDay));
+                : userCards.findCardsInStateForUser(userId, CardState.NEW,
+                        PageRequest.of(0, newPerDay));
 
         List<UserCardEntity> combined = new ArrayList<>(reviews.size() + news.size());
         combined.addAll(reviews);
