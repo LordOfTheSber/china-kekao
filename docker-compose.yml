@@ -42,14 +42,23 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: node:20-alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
     container_name: kekao-frontend
     profiles: ["frontend"]
-    working_dir: /app
-    command: sh -c "echo 'Frontend will be wired up in TASK-017' && tail -f /dev/null"
+    depends_on:
+      - backend
+    environment:
+      VITE_API_PROXY: http://backend:8080
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     restart: unless-stopped
 
 volumes:
   postgres-data:
+  frontend-node-modules:
