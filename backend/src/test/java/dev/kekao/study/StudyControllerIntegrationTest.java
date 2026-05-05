@@ -169,8 +169,8 @@ class StudyControllerIntegrationTest extends AbstractPostgresIntegrationTest {
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[?(@.mode == 'RECOGNITION')].character",
                         org.hamcrest.Matchers.contains("你")))
-                .andExpect(jsonPath("$[?(@.mode == 'RECOGNITION')].meanings[0]")
-                        .doesNotExist())
+                .andExpect(jsonPath("$[?(@.mode == 'RECOGNITION')].meanings[0]",
+                        org.hamcrest.Matchers.contains("you")))
                 .andExpect(jsonPath("$[?(@.mode == 'PRODUCTION')].character[0]")
                         .doesNotExist())
                 .andExpect(jsonPath("$[?(@.mode == 'PRODUCTION')].meanings[0]",
