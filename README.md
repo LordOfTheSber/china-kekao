@@ -6,7 +6,7 @@ See [`AGENTS.md`](./AGENTS.md) for the full roadmap and conventions.
 ## Stack
 
 - **Backend:** Spring Boot 3.3, Java 21, PostgreSQL 16, Flyway, Bucket4j
-- **Frontend:** React 18 + Vite (added in TASK-017)
+- **Frontend:** React 18 + Vite + TypeScript (TASK-017, see [`frontend/README.md`](./frontend/README.md))
 - **Infra:** Docker Compose for local dev, no Redis (JWT stateless, in-memory rate limit)
 
 ## Repository layout
@@ -17,7 +17,10 @@ See [`AGENTS.md`](./AGENTS.md) for the full roadmap and conventions.
 │   ├── src/main/...    Production code, organized by domain package
 │   ├── src/test/...    Unit + integration tests (Testcontainers PostgreSQL)
 │   └── Dockerfile      Multi-stage build (Maven → JRE 21)
-├── docker-compose.yml  postgres + backend (+ placeholder frontend)
+├── frontend/           React 18 + Vite SPA (TypeScript, Tailwind, TanStack Query)
+│   ├── src/            App entrypoint, pages, components, auth store, API client
+│   └── Dockerfile      dev / build / nginx-prod targets
+├── docker-compose.yml  postgres + backend (frontend behind `frontend` profile)
 ├── .env.example        Template for environment variables
 └── AGENTS.md           Task list / conventions for AI agents
 ```
