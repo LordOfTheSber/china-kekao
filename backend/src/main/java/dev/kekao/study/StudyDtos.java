@@ -13,7 +13,8 @@ public final class StudyDtos {
     /**
      * Card payload returned to the client for a study session.
      * <ul>
-     *   <li>RECOGNITION: {@code character} and {@code pinyin} are populated; {@code meanings} stay {@code null}.</li>
+     *   <li>RECOGNITION: {@code character}, {@code pinyin} and {@code meanings} are populated — meanings
+     *       are revealed in the UI after the learner submits their answer.</li>
      *   <li>PRODUCTION: {@code meanings} are populated; {@code character} is hidden so the learner can draw it.
      *       {@code strokeData} is reserved for the stroke-order payload (added in a later task).</li>
      * </ul>

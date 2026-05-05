@@ -85,7 +85,6 @@ public class StudyController {
 
     private Map<Long, List<String>> loadEnglishMeanings(List<UserCardEntity> cards) {
         List<Long> hanziIds = cards.stream()
-                .filter(c -> c.getMode() == StudyMode.PRODUCTION)
                 .map(c -> c.getHanzi().getId())
                 .distinct()
                 .toList();
@@ -106,7 +105,7 @@ public class StudyController {
                     hanzi.getCharacter(),
                     hanzi.getPinyin(),
                     StudyMode.RECOGNITION,
-                    null,
+                    meaningsByHanzi.getOrDefault(hanzi.getId(), List.of()),
                     null);
         }
         return new StudyCardView(
