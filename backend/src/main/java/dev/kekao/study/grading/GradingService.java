@@ -4,6 +4,7 @@ import dev.kekao.hanzi.HanziEntity;
 import dev.kekao.hanzi.HanziRepository;
 import dev.kekao.hanzi.HanziTranslationEntity;
 import dev.kekao.hanzi.HanziTranslationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ public class GradingService {
     private final HanziRepository hanzi;
     private final HanziTranslationRepository translations;
 
+    @Autowired
     public GradingService(HanziRepository hanzi, HanziTranslationRepository translations) {
         this.hanzi = hanzi;
         this.translations = translations;

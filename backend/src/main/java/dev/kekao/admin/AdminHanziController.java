@@ -5,6 +5,7 @@ import dev.kekao.admin.AdminDtos.HanziPage;
 import dev.kekao.admin.AdminDtos.HanziUpdateRequest;
 import dev.kekao.hanzi.HanziStatus;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +21,7 @@ public class AdminHanziController {
 
     private final AdminHanziService service;
 
+    @Autowired
     public AdminHanziController(AdminHanziService service) {
         this.service = service;
     }

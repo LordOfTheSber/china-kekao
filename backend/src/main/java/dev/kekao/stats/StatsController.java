@@ -1,6 +1,7 @@
 package dev.kekao.stats;
 
 import dev.kekao.stats.StatsDtos.DashboardView;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +14,7 @@ public class StatsController {
 
     private final StatsService service;
 
+    @Autowired
     public StatsController(StatsService service) {
         this.service = service;
     }

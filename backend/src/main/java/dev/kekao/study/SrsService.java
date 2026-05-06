@@ -3,6 +3,7 @@ package dev.kekao.study;
 import dev.kekao.study.srs.SrsAlgorithm;
 import dev.kekao.study.srs.SrsCardState;
 import dev.kekao.study.srs.SrsScheduleResult;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ public class SrsService {
     private final ReviewLogRepository reviewLogs;
     private final SrsAlgorithm algorithm;
 
+    @Autowired
     public SrsService(UserCardRepository userCards, ReviewLogRepository reviewLogs, SrsAlgorithm algorithm) {
         this.userCards = userCards;
         this.reviewLogs = reviewLogs;

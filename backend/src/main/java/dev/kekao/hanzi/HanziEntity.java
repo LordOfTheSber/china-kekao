@@ -50,6 +50,9 @@ public class HanziEntity {
     @Column(nullable = false, length = 16)
     private HanziStatus status;
 
+    @Column(name = "has_stroke_data", nullable = false)
+    private boolean hasStrokeData;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

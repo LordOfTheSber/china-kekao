@@ -19,6 +19,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 @SpringBootTest
 @EnabledIf(value = "dev.kekao.DockerAvailability#isAvailable",
@@ -78,7 +79,10 @@ class SrsServiceIntegrationTest extends AbstractPostgresIntegrationTest {
         assertThat(updated.getState()).isEqualTo(CardState.valueOf(result.state().name()));
         assertThat(updated.getStability()).isEqualTo(result.stability());
         assertThat(updated.getDifficulty()).isEqualTo(result.difficulty());
-        assertThat(truncateToMicros(updated.getDueDate())).isEqualTo(truncateToMicros(result.nextDue()));
+        // PostgreSQL stores TIMESTAMPTZ at microsecond precision and rounds the
+        // sub-microsecond tail, while Java Instant keeps nanoseconds — allow a
+        // ±1µs window when comparing the round-tripped value.
+        assertThat(updated.getDueDate()).isCloseTo(result.nextDue(), within(1, ChronoUnit.MICROS));
         assertThat(updated.getLastReview()).isNotNull();
         assertThat(updated.getReps()).isEqualTo(1);
         assertThat(updated.getLapses()).isEqualTo(0);
@@ -100,7 +104,4 @@ class SrsServiceIntegrationTest extends AbstractPostgresIntegrationTest {
                 });
     }
 
-    private Instant truncateToMicros(Instant value) {
-        return value.truncatedTo(ChronoUnit.MICROS);
-    }
 }
