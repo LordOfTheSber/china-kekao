@@ -1,0 +1,14 @@
+{
+  "name": "hanzi-writer-coverage",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "TASK-021: check hanzi-writer-data coverage for hanzi in the kekao DB.",
+  "scripts": {
+    "check": "node check-coverage.mjs"
+  },
+  "dependencies": {
+    "hanzi-writer-data": "^2.0.1",
+    "pg": "^8.13.1"
+  }
+}
