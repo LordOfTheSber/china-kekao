@@ -10,3 +10,15 @@ export async function postReview(req: ReviewRequest): Promise<ReviewResponse> {
   const response = await api.post<ReviewResponse>("/study/review", req);
   return response.data;
 }
+
+export interface DistractorsResponse {
+  hanziId: number;
+  distractors: string[];
+}
+
+export async function fetchDistractors(hanziId: number, count = 5): Promise<DistractorsResponse> {
+  const response = await api.get<DistractorsResponse>("/study/distractors", {
+    params: { hanziId, count },
+  });
+  return response.data;
+}
