@@ -2,9 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { fetchStudySession, postReview } from "@/api/study";
+import { fetchDistractors, fetchStudySession, postReview } from "@/api/study";
 import { extractErrorMessage } from "@/api/auth";
 import type { Rating, StudyCard } from "@/api/types";
+import { HanziDrawingPad, type DrawingResult } from "@/components/HanziDrawingPad";
+import { HanziChoiceGrid } from "@/components/HanziChoiceGrid";
+import { usePreferencesStore } from "@/store/preferences";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -86,6 +89,9 @@ function SessionRunner({
   cards: StudyCard[];
   onFinished: () => void;
 }) {
+  const productionMode = usePreferencesStore((s) => s.productionMode);
+  const helpLevel = usePreferencesStore((s) => s.helpLevel);
+
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [grade, setGrade] = useState<GradeResult | null>(null);
@@ -99,6 +105,7 @@ function SessionRunner({
 
   const card = cards[index];
   const finished = index >= cards.length;
+  const isProduction = !!card && card.mode === "PRODUCTION";
 
   const reviewMutation = useMutation({
     mutationFn: postReview,
@@ -135,16 +142,21 @@ function SessionRunner({
     setRevealed(true);
   }
 
-  function applyRating(rating: Rating) {
+  function applyRating(
+    rating: Rating,
+    extras?: { hintCount?: number; strokeMistakes?: number; responseTimeMs?: number },
+  ) {
     if (!card) return;
-    const responseTimeMs = Math.max(0, Math.round(performance.now() - startedAtRef.current));
+    const responseTimeMs =
+      extras?.responseTimeMs ??
+      Math.max(0, Math.round(performance.now() - startedAtRef.current));
     reviewMutation.mutate({
       userCardId: card.userCardId,
       mode: card.mode,
       rating,
       responseTimeMs,
-      hintCount: 0,
-      strokeMistakes: 0,
+      hintCount: extras?.hintCount ?? 0,
+      strokeMistakes: extras?.strokeMistakes ?? 0,
     });
     setStats((prev) => ({
       again: prev.again + (rating === "AGAIN" ? 1 : 0),
@@ -153,6 +165,22 @@ function SessionRunner({
       easy: prev.easy + (rating === "EASY" ? 1 : 0),
     }));
     setIndex((i) => i + 1);
+  }
+
+  function handleDrawingComplete(result: DrawingResult) {
+    applyRating(result.rating, {
+      hintCount: result.hintCount,
+      strokeMistakes: result.strokeMistakes,
+      responseTimeMs: result.durationMs,
+    });
+  }
+
+  function handleDrawingSkip() {
+    applyRating("AGAIN");
+  }
+
+  function handleChoiceComplete(rating: Rating) {
+    applyRating(rating);
   }
 
   function handleRate(rating: Rating) {
@@ -222,13 +250,25 @@ function SessionRunner({
               grade={grade}
               pinyinInputRef={pinyinInputRef}
             />
+          ) : productionMode === "DRAWING" ? (
+            <ProductionDrawing
+              key={card.userCardId}
+              card={card}
+              helpLevel={helpLevel}
+              onComplete={handleDrawingComplete}
+              onSkip={handleDrawingSkip}
+            />
           ) : (
-            <ProductionPlaceholder card={card} />
+            <ProductionChoice
+              key={card.userCardId}
+              card={card}
+              onComplete={handleChoiceComplete}
+            />
           )}
         </CardContent>
       </Card>
 
-      {revealed ? (
+      {isProduction ? null : revealed ? (
         <RatingButtons
           suggested={grade?.suggestedRating ?? "GOOD"}
           onPick={handleRate}
@@ -236,7 +276,7 @@ function SessionRunner({
         />
       ) : (
         <div className="flex justify-center">
-          <Button size="lg" onClick={handleCheck} disabled={card.mode === "PRODUCTION"}>
+          <Button size="lg" onClick={handleCheck}>
             Check (Enter)
           </Button>
         </div>
@@ -352,15 +392,112 @@ function RecognitionCard({
   );
 }
 
-function ProductionPlaceholder({ card }: { card: StudyCard }) {
+function ProductionPrompt({ card }: { card: StudyCard }) {
   return (
-    <div className="flex flex-col items-center gap-4 text-center">
+    <div className="flex flex-col items-center gap-1 text-center">
       <div className="text-2xl font-medium">
         {(card.meanings ?? []).join(", ") || "—"}
       </div>
-      <p className="text-sm text-muted-foreground">
-        Drawing mode arrives in TASK-022. For now, self-grade after recalling the character.
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+        {card.pinyin}
+      </div>
+    </div>
+  );
+}
+
+function ProductionDrawing({
+  card,
+  helpLevel,
+  onComplete,
+  onSkip,
+}: {
+  card: StudyCard;
+  helpLevel: import("@/store/preferences").HelpLevel;
+  onComplete: (result: DrawingResult) => void;
+  onSkip: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-6 w-full">
+      <ProductionPrompt card={card} />
+      {card.character ? (
+        <HanziDrawingPad
+          character={card.character}
+          helpLevel={helpLevel}
+          onComplete={onComplete}
+          onSkip={onSkip}
+        />
+      ) : (
+        <ProductionDrawingMissing onSkip={onSkip} />
+      )}
+    </div>
+  );
+}
+
+function ProductionDrawingMissing({ onSkip }: { onSkip: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-3 text-center">
+      <p className="text-sm text-destructive">
+        This card is missing the target character. Skipping is the only option.
       </p>
+      <Button variant="outline" size="sm" onClick={onSkip}>
+        Skip
+      </Button>
+    </div>
+  );
+}
+
+function ProductionChoice({
+  card,
+  onComplete,
+}: {
+  card: StudyCard;
+  onComplete: (rating: Rating) => void;
+}) {
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["distractors", card.hanziId],
+    queryFn: () => fetchDistractors(card.hanziId, 5),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center gap-4 w-full">
+        <ProductionPrompt card={card} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-20 rounded-md bg-muted animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+  if (isError || !data) {
+    return (
+      <div className="flex flex-col items-center gap-3">
+        <p className="text-sm text-destructive">Could not load choices.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+      </div>
+    );
+  }
+  if (!card.character) {
+    return (
+      <div className="flex flex-col items-center gap-3 text-center">
+        <p className="text-sm text-destructive">Missing target character.</p>
+        <Button variant="outline" size="sm" onClick={() => onComplete("AGAIN")}>
+          Skip
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-4 w-full">
+      <ProductionPrompt card={card} />
+      <HanziChoiceGrid
+        correctCharacter={card.character}
+        distractors={data.distractors}
+        onComplete={onComplete}
+      />
     </div>
   );
 }

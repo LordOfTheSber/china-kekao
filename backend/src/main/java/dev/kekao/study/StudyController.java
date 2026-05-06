@@ -1,8 +1,10 @@
 package dev.kekao.study;
 
 import dev.kekao.hanzi.HanziEntity;
+import dev.kekao.hanzi.HanziRepository;
 import dev.kekao.hanzi.HanziTranslationEntity;
 import dev.kekao.hanzi.HanziTranslationRepository;
+import dev.kekao.study.StudyDtos.DistractorsResponse;
 import dev.kekao.study.StudyDtos.ReviewRequest;
 import dev.kekao.study.StudyDtos.ReviewResponse;
 import dev.kekao.study.StudyDtos.StudyCardView;
@@ -18,10 +20,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @RestController
@@ -34,16 +39,19 @@ public class StudyController {
     private final SrsService srsService;
     private final UserCardRepository userCards;
     private final HanziTranslationRepository translations;
+    private final HanziRepository hanzi;
 
     @Autowired
     public StudyController(StudySessionService sessionService,
                            SrsService srsService,
                            UserCardRepository userCards,
-                           HanziTranslationRepository translations) {
+                           HanziTranslationRepository translations,
+                           HanziRepository hanzi) {
         this.sessionService = sessionService;
         this.srsService = srsService;
         this.userCards = userCards;
         this.translations = translations;
+        this.hanzi = hanzi;
     }
 
     @GetMapping("/session")
@@ -53,6 +61,27 @@ public class StudyController {
         List<UserCardEntity> queue = sessionService.getTodayQueue(userId);
         Map<Long, List<String>> meaningsByHanzi = loadEnglishMeanings(queue);
         return queue.stream().map(card -> toView(card, meaningsByHanzi)).toList();
+    }
+
+    @GetMapping("/distractors")
+    @Transactional(readOnly = true)
+    public DistractorsResponse distractors(@RequestParam("hanziId") Long hanziId,
+                                           @RequestParam(value = "count", defaultValue = "5") int count) {
+        if (count < 1) count = 1;
+        if (count > 20) count = 20;
+        HanziEntity target = hanzi.findById(hanziId)
+                .orElseThrow(() -> new NoSuchElementException("Hanzi not found: " + hanziId));
+
+        List<HanziEntity> picks = new ArrayList<>(
+                hanzi.findRandomDistractors(hanziId, target.getHskLevel(), count));
+        if (picks.size() < count) {
+            List<Long> exclude = new ArrayList<>(picks.size() + 1);
+            exclude.add(hanziId);
+            picks.forEach(p -> exclude.add(p.getId()));
+            picks.addAll(hanzi.findRandomDistractorsExcluding(hanziId, exclude, count - picks.size()));
+        }
+        List<String> distractors = picks.stream().map(HanziEntity::getCharacter).toList();
+        return new DistractorsResponse(hanziId, distractors);
     }
 
     @PostMapping("/review")
@@ -113,7 +142,7 @@ public class StudyController {
         return new StudyCardView(
                 card.getId(),
                 hanzi.getId(),
-                null,
+                hanzi.getCharacter(),
                 hanzi.getPinyin(),
                 StudyMode.PRODUCTION,
                 meaningsByHanzi.getOrDefault(hanzi.getId(), List.of()),

@@ -15,7 +15,9 @@ public final class StudyDtos {
      * <ul>
      *   <li>RECOGNITION: {@code character}, {@code pinyin} and {@code meanings} are populated — meanings
      *       are revealed in the UI after the learner submits their answer.</li>
-     *   <li>PRODUCTION: {@code meanings} are populated; {@code character} is hidden so the learner can draw it.
+     *   <li>PRODUCTION: {@code meanings} and {@code character} are populated. The character is the
+     *       drawing/selection target — the UI does not render it directly until the learner finishes
+     *       (drawing pad uses it internally; choice grid compares it against the picked option).
      *       {@code strokeData} is reserved for the stroke-order payload (added in a later task).</li>
      * </ul>
      */
@@ -36,6 +38,11 @@ public final class StudyDtos {
             @Min(0) Integer responseTimeMs,
             @Min(0) Short hintCount,
             @Min(0) Short strokeMistakes
+    ) {}
+
+    public record DistractorsResponse(
+            Long hanziId,
+            List<String> distractors
     ) {}
 
     public record ReviewResponse(
