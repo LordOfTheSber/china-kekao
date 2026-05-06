@@ -1,7 +1,10 @@
+import { useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth";
+import { usePreferencesStore } from "@/store/preferences";
+import { fetchUserSettings } from "@/api/me";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -17,6 +20,30 @@ export function Layout() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const clear = useAuthStore((s) => s.clear);
+  const hydrate = usePreferencesStore((s) => s.hydrate);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    fetchUserSettings()
+      .then((settings) => {
+        if (cancelled) return;
+        hydrate({
+          newPerDay: settings.newPerDay,
+          maxReviewsPerDay: settings.maxReviewsPerDay,
+          requestRetention: settings.requestRetention,
+          productionMode: settings.productionMode,
+          helpLevel: settings.drawingHelpLevel,
+          withTones: settings.withTones,
+        });
+      })
+      .catch(() => {
+        // Non-fatal: keep persisted defaults.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, hydrate]);
 
   const handleLogout = () => {
     clear();

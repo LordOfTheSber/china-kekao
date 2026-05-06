@@ -91,6 +91,7 @@ function SessionRunner({
 }) {
   const productionMode = usePreferencesStore((s) => s.productionMode);
   const helpLevel = usePreferencesStore((s) => s.helpLevel);
+  const withTones = usePreferencesStore((s) => s.withTones);
 
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -137,7 +138,7 @@ function SessionRunner({
 
   function handleCheck() {
     if (!card || revealed) return;
-    const result = gradeAnswer(card.pinyin, acceptedMeanings, pinyin, meaning);
+    const result = gradeAnswer(card.pinyin, acceptedMeanings, pinyin, meaning, { withTones });
     setGrade(result);
     setRevealed(true);
   }

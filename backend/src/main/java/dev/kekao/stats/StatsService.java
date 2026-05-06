@@ -1,6 +1,9 @@
 package dev.kekao.stats;
 
+import dev.kekao.stats.StatsDtos.CardStateBreakdown;
+import dev.kekao.stats.StatsDtos.DailyReview;
 import dev.kekao.stats.StatsDtos.DashboardView;
+import dev.kekao.stats.StatsDtos.OverviewView;
 import dev.kekao.study.CardState;
 import dev.kekao.study.ReviewLogRepository;
 import dev.kekao.study.UserCardRepository;
@@ -35,6 +38,42 @@ public class StatsService {
         this.userCards = userCards;
         this.reviewLogs = reviewLogs;
         this.clock = clock;
+    }
+
+    @Transactional(readOnly = true)
+    public OverviewView overview(Long userId, int days) {
+        int safeDays = Math.max(1, Math.min(days, 365));
+        Instant now = Instant.now(clock);
+        LocalDate today = now.atZone(ZoneOffset.UTC).toLocalDate();
+        Instant since = today.minusDays(safeDays - 1L).atStartOfDay(ZoneOffset.UTC).toInstant();
+        java.util.Map<LocalDate, long[]> byDay = new java.util.HashMap<>();
+        for (Object[] row : reviewLogs.findDailyReviewCounts(userId, since)) {
+            LocalDate day = ((java.sql.Date) row[0]).toLocalDate();
+            long total = ((Number) row[1]).longValue();
+            long good = ((Number) row[2]).longValue();
+            byDay.put(day, new long[] {total, good});
+        }
+        java.util.List<DailyReview> daily = new java.util.ArrayList<>(safeDays);
+        for (int i = 0; i < safeDays; i++) {
+            LocalDate day = today.minusDays(safeDays - 1L - i);
+            long[] vals = byDay.getOrDefault(day, new long[] {0, 0});
+            double accuracy = vals[0] == 0 ? 0.0 : (double) vals[1] / vals[0];
+            daily.add(new DailyReview(day.toString(), vals[0], vals[1], accuracy));
+        }
+
+        long news = 0, learning = 0, review = 0, relearning = 0;
+        for (Object[] row : userCards.countCardsByState(userId)) {
+            CardState state = (CardState) row[0];
+            long count = ((Number) row[1]).longValue();
+            switch (state) {
+                case NEW -> news = count;
+                case LEARNING -> learning = count;
+                case REVIEW -> review = count;
+                case RELEARNING -> relearning = count;
+            }
+        }
+        return new OverviewView(safeDays, daily,
+                new CardStateBreakdown(news, learning, review, relearning));
     }
 
     @Transactional(readOnly = true)

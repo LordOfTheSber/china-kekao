@@ -42,4 +42,64 @@ public interface HanziRepository extends JpaRepository<HanziEntity, Long> {
     List<HanziEntity> findRandomDistractorsExcluding(@Param("hanziId") Long hanziId,
                                                      @Param("excludeIds") List<Long> excludeIds,
                                                      @Param("count") int count);
+
+    /**
+     * Full-text-ish search across character, pinyin and English meanings of PUBLISHED
+     * hanzi, ordered by relevance (exact character match > prefix on pinyin > rest)
+     * and {@code frequency_rank} ascending.
+     */
+    @Query(value = """
+            SELECT h.*
+            FROM hanzi h
+            LEFT JOIN hanzi_translation t
+                   ON t.hanzi_id = h.id AND t.language = 'en'
+            WHERE h.status = 'PUBLISHED'
+              AND (:hsk IS NULL OR h.hsk_level = :hsk)
+              AND (
+                  :q = ''
+                  OR h.character = :q
+                  OR h.pinyin ILIKE :qLike
+                  OR EXISTS (
+                      SELECT 1 FROM unnest(COALESCE(t.meanings, ARRAY[]::text[])) m
+                      WHERE m ILIKE :qLike
+                  )
+              )
+            ORDER BY
+              CASE
+                WHEN :q <> '' AND h.character = :q THEN 0
+                WHEN :q <> '' AND h.pinyin ILIKE :qPrefix THEN 1
+                WHEN :q <> '' AND h.pinyin ILIKE :qLike   THEN 2
+                ELSE 3
+              END ASC,
+              COALESCE(h.frequency_rank, 1000000) ASC,
+              h.id ASC
+            LIMIT :limit OFFSET :offset
+            """, nativeQuery = true)
+    List<HanziEntity> searchPublished(@Param("q") String q,
+                                      @Param("qPrefix") String qPrefix,
+                                      @Param("qLike") String qLike,
+                                      @Param("hsk") Short hsk,
+                                      @Param("limit") int limit,
+                                      @Param("offset") int offset);
+
+    @Query(value = """
+            SELECT COUNT(DISTINCT h.id)
+            FROM hanzi h
+            LEFT JOIN hanzi_translation t
+                   ON t.hanzi_id = h.id AND t.language = 'en'
+            WHERE h.status = 'PUBLISHED'
+              AND (:hsk IS NULL OR h.hsk_level = :hsk)
+              AND (
+                  :q = ''
+                  OR h.character = :q
+                  OR h.pinyin ILIKE :qLike
+                  OR EXISTS (
+                      SELECT 1 FROM unnest(COALESCE(t.meanings, ARRAY[]::text[])) m
+                      WHERE m ILIKE :qLike
+                  )
+              )
+            """, nativeQuery = true)
+    long countSearchPublished(@Param("q") String q,
+                              @Param("qLike") String qLike,
+                              @Param("hsk") Short hsk);
 }

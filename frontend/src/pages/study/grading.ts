@@ -39,13 +39,15 @@ export function normalizePinyinSyllable(input: string): string {
   return tone > 0 ? `${base}${tone}` : base;
 }
 
-export function normalizePinyin(input: string): string {
-  return input
+export function normalizePinyin(input: string, withTones = true): string {
+  const joined = input
     .trim()
     .split(/\s+/)
     .map(normalizePinyinSyllable)
     .filter(Boolean)
     .join(" ");
+  if (withTones) return joined;
+  return joined.replace(/[1-4]/g, "");
 }
 
 export function normalizeMeaning(input: string): string {
@@ -81,9 +83,11 @@ export function gradeAnswer(
   acceptedMeanings: string[],
   userPinyin: string,
   userMeaning: string,
+  options: { withTones?: boolean } = {},
 ): GradeResult {
-  const normalizedExpected = normalizePinyin(expectedPinyin);
-  const normalizedUserPinyin = normalizePinyin(userPinyin);
+  const withTones = options.withTones ?? true;
+  const normalizedExpected = normalizePinyin(expectedPinyin, withTones);
+  const normalizedUserPinyin = normalizePinyin(userPinyin, withTones);
   const pinyinOk = normalizedExpected.length > 0 && normalizedExpected === normalizedUserPinyin;
 
   const normalizedAnswer = normalizeMeaning(userMeaning);

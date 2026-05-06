@@ -1,8 +1,10 @@
 package dev.kekao.study;
 
+import dev.kekao.study.srs.FsrsAlgorithm;
 import dev.kekao.study.srs.SrsAlgorithm;
 import dev.kekao.study.srs.SrsCardState;
 import dev.kekao.study.srs.SrsScheduleResult;
+import dev.kekao.user.UserSettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,12 +19,21 @@ public class SrsService {
     private final UserCardRepository userCards;
     private final ReviewLogRepository reviewLogs;
     private final SrsAlgorithm algorithm;
+    private final UserSettingsService userSettings;
 
     @Autowired
-    public SrsService(UserCardRepository userCards, ReviewLogRepository reviewLogs, SrsAlgorithm algorithm) {
+    public SrsService(UserCardRepository userCards,
+                      ReviewLogRepository reviewLogs,
+                      SrsAlgorithm algorithm,
+                      UserSettingsService userSettings) {
         this.userCards = userCards;
         this.reviewLogs = reviewLogs;
         this.algorithm = algorithm;
+        this.userSettings = userSettings;
+    }
+
+    public SrsService(UserCardRepository userCards, ReviewLogRepository reviewLogs, SrsAlgorithm algorithm) {
+        this(userCards, reviewLogs, algorithm, null);
     }
 
     @Transactional
@@ -30,10 +41,22 @@ public class SrsService {
         Instant now = Instant.now();
         UserCardEntity card = loadCard(userCardId);
         SrsCardState state = toAlgorithmState(card);
-        SrsScheduleResult result = algorithm.schedule(state, toAlgorithmRating(rating), now);
+        SrsAlgorithm effective = pickAlgorithmForUser(card.getUser().getId());
+        SrsScheduleResult result = effective.schedule(state, toAlgorithmRating(rating), now);
         persistCardState(card, result, now, state, rating);
         persistReviewLog(card, state, result, rating, metadata, now);
         return result;
+    }
+
+    private SrsAlgorithm pickAlgorithmForUser(Long userId) {
+        if (userSettings == null || userId == null) return algorithm;
+        try {
+            double retention = userSettings.get(userId).requestRetention();
+            if (Math.abs(retention - 0.9) < 1e-6) return algorithm;
+            return new FsrsAlgorithm(retention);
+        } catch (RuntimeException ignored) {
+            return algorithm;
+        }
     }
 
     private UserCardEntity loadCard(Long userCardId) {
