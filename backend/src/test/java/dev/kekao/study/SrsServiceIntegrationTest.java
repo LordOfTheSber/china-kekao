@@ -14,7 +14,6 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
@@ -83,7 +82,7 @@ class SrsServiceIntegrationTest extends AbstractPostgresIntegrationTest {
         // PostgreSQL stores TIMESTAMPTZ at microsecond precision and rounds the
         // sub-microsecond tail, while Java Instant keeps nanoseconds — allow a
         // ±1µs window when comparing the round-tripped value.
-        assertThat(updated.getDueDate()).isCloseTo(result.nextDue(), within(Duration.ofNanos(1_000)));
+        assertThat(updated.getDueDate()).isCloseTo(result.nextDue(), within(1, ChronoUnit.MICROS));
         assertThat(updated.getLastReview()).isNotNull();
         assertThat(updated.getReps()).isEqualTo(1);
         assertThat(updated.getLapses()).isEqualTo(0);
