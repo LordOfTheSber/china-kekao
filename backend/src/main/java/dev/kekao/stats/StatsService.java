@@ -4,6 +4,7 @@ import dev.kekao.stats.StatsDtos.DashboardView;
 import dev.kekao.study.CardState;
 import dev.kekao.study.ReviewLogRepository;
 import dev.kekao.study.UserCardRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ public class StatsService {
     private final ReviewLogRepository reviewLogs;
     private final Clock clock;
 
+    @Autowired
     public StatsService(UserCardRepository userCards, ReviewLogRepository reviewLogs) {
         this(userCards, reviewLogs, Clock.systemUTC());
     }

@@ -7,6 +7,7 @@ import dev.kekao.auth.AuthDtos.TokenPair;
 import dev.kekao.user.UserEntity;
 import dev.kekao.user.UserRepository;
 import dev.kekao.user.UserRole;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ public class AuthService {
     private final TokenService tokens;
     private final AuthProperties props;
 
+    @Autowired
     public AuthService(UserRepository users,
                        RefreshTokenRepository refreshTokens,
                        PasswordEncoder passwordEncoder,

@@ -5,6 +5,7 @@ import dev.kekao.study.UserCardEntity;
 import dev.kekao.study.UserCardRepository;
 import dev.kekao.user.UserEntity;
 import dev.kekao.user.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +40,7 @@ public class StudySessionService {
     private final Clock clock;
     private final Random random;
 
+    @Autowired
     public StudySessionService(UserRepository users, UserCardRepository userCards) {
         this(users, userCards, Clock.systemUTC(), new Random());
     }

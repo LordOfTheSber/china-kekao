@@ -1,6 +1,7 @@
 package dev.kekao.auth;
 
 import dev.kekao.user.UserEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -22,6 +23,7 @@ public class TokenService {
     private final AuthProperties props;
     private final SecureRandom random = new SecureRandom();
 
+    @Autowired
     public TokenService(JwtEncoder encoder, AuthProperties props) {
         this.encoder = encoder;
         this.props = props;

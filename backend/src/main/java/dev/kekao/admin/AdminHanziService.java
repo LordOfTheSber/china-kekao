@@ -8,6 +8,7 @@ import dev.kekao.hanzi.HanziRepository;
 import dev.kekao.hanzi.HanziStatus;
 import dev.kekao.hanzi.HanziTranslationEntity;
 import dev.kekao.hanzi.HanziTranslationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -27,6 +28,7 @@ public class AdminHanziService {
     private final HanziRepository hanzi;
     private final HanziTranslationRepository translations;
 
+    @Autowired
     public AdminHanziService(HanziRepository hanzi, HanziTranslationRepository translations) {
         this.hanzi = hanzi;
         this.translations = translations;

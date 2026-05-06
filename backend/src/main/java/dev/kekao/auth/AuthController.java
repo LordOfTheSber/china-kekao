@@ -5,6 +5,7 @@ import dev.kekao.auth.AuthDtos.RefreshRequest;
 import dev.kekao.auth.AuthDtos.RegisterRequest;
 import dev.kekao.auth.AuthDtos.TokenPair;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +19,7 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Autowired
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
