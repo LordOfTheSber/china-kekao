@@ -45,10 +45,12 @@ class HanziImportIntegrationTest extends AbstractPostgresIntegrationTest {
         assertThat(report.created()).isGreaterThan(100);
         List<HanziEntity> all = hanzi.findAll();
         assertThat(all).hasSizeGreaterThan(100);
-        assertThat(all).allSatisfy(h -> {
-            assertThat(h.getStatus()).isEqualTo(HanziStatus.DRAFT);
-            assertThat(h.getHskLevel()).isEqualTo((short) 1);
-        });
+        assertThat(all).allSatisfy(h -> assertThat(h.getHskLevel()).isEqualTo((short) 1));
+        // Characters with full CC-CEDICT data are auto-published; the rest stay
+        // in DRAFT for manual editing. Both states must be in the lifecycle.
+        assertThat(all)
+                .extracting(HanziEntity::getStatus)
+                .containsAnyOf(HanziStatus.PUBLISHED, HanziStatus.DRAFT);
     }
 
     @Test
