@@ -14,6 +14,8 @@ public interface HanziRepository extends JpaRepository<HanziEntity, Long> {
 
     Page<HanziEntity> findAllByStatus(HanziStatus status, Pageable pageable);
 
+    List<HanziEntity> findAllByStatusAndHskLevelOrderByFrequencyRankAscIdAsc(HanziStatus status, Short hskLevel);
+
     /**
      * Random distractor candidates: published hanzi that share an HSK level with the
      * target, excluding the target itself. Used by the CHOICE production fallback
