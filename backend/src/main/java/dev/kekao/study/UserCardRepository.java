@@ -87,4 +87,11 @@ public interface UserCardRepository extends JpaRepository<UserCardEntity, Long> 
     long countCardsInStateForUser(@Param("userId") Long userId, @Param("state") CardState state);
 
     long countByUserIdAndState(Long userId, CardState state);
+
+    @Query("""
+            SELECT uc.state, COUNT(uc) FROM UserCardEntity uc
+            WHERE uc.user.id = :userId
+            GROUP BY uc.state
+            """)
+    List<Object[]> countCardsByState(@Param("userId") Long userId);
 }

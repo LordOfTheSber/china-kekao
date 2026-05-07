@@ -125,6 +125,53 @@ class StatsControllerIntegrationTest extends AbstractPostgresIntegrationTest {
                 .andExpect(jsonPath("$.accuracy7d").value(0.0));
     }
 
+    @Test
+    void overviewRequiresAuth() throws Exception {
+        mvc.perform(get("/api/stats/overview")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void overviewExposesDailyTotalsAndStateBreakdown() throws Exception {
+        HanziEntity h1 = seedHanzi("一", "yī");
+        HanziEntity h2 = seedHanzi("二", "èr");
+        seedDeck(owner, h1, h2);
+
+        Instant now = Instant.now();
+        UserCardEntity reviewCard = seedCard(owner, h1, StudyMode.RECOGNITION,
+                CardState.REVIEW, now);
+        seedCard(owner, h2, StudyMode.RECOGNITION, CardState.NEW, now);
+
+        // 2 GOOD today, 1 AGAIN yesterday.
+        saveReviewLog(reviewCard, (short) 3, now);
+        saveReviewLog(reviewCard, (short) 4, now);
+        saveReviewLog(reviewCard, (short) 1, now.minus(1, ChronoUnit.DAYS));
+
+        mvc.perform(get("/api/stats/overview?days=7")
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.days").value(7))
+                .andExpect(jsonPath("$.daily.length()").value(7))
+                .andExpect(jsonPath("$.daily[6].total").value(2))
+                .andExpect(jsonPath("$.daily[6].good").value(2))
+                .andExpect(jsonPath("$.daily[6].accuracy").value(1.0))
+                .andExpect(jsonPath("$.daily[5].total").value(1))
+                .andExpect(jsonPath("$.daily[5].good").value(0))
+                .andExpect(jsonPath("$.states.newCount").value(1))
+                .andExpect(jsonPath("$.states.review").value(1));
+    }
+
+    @Test
+    void overviewClampsDaysParameter() throws Exception {
+        mvc.perform(get("/api/stats/overview?days=0")
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.days").value(1));
+        mvc.perform(get("/api/stats/overview?days=10000")
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.days").value(365));
+    }
+
     private HanziEntity seedHanzi(String character, String pinyin) {
         return hanzi.save(HanziEntity.builder()
                 .character(character)

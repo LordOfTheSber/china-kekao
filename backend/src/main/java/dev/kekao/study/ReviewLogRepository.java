@@ -17,4 +17,17 @@ public interface ReviewLogRepository extends JpaRepository<ReviewLogEntity, Long
             ORDER BY rl.reviewedAt DESC
             """)
     List<Object[]> findUserReviewsSince(@Param("userId") Long userId, @Param("since") Instant since);
+
+    @Query(value = """
+            SELECT date_trunc('day', rl.reviewed_at AT TIME ZONE 'UTC')::date AS day,
+                   COUNT(*) AS total,
+                   SUM(CASE WHEN rl.rating >= 3 THEN 1 ELSE 0 END) AS good
+            FROM review_log rl
+            JOIN user_card uc ON uc.id = rl.user_card_id
+            WHERE uc.user_id = :userId
+              AND rl.reviewed_at >= :since
+            GROUP BY day
+            ORDER BY day ASC
+            """, nativeQuery = true)
+    List<Object[]> findDailyReviewCounts(@Param("userId") Long userId, @Param("since") Instant since);
 }
