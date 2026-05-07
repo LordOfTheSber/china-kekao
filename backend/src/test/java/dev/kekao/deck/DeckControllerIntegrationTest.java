@@ -10,6 +10,7 @@ import dev.kekao.study.UserCardRepository;
 import dev.kekao.user.UserEntity;
 import dev.kekao.user.UserRepository;
 import dev.kekao.user.UserRole;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -63,6 +64,16 @@ class DeckControllerIntegrationTest extends AbstractPostgresIntegrationTest {
                 .settings(new HashMap<>())
                 .build());
         userToken = tokens.issueAccessToken(user);
+    }
+
+    @AfterEach
+    void cleanUp() {
+        userCards.deleteAll();
+        userDecks.deleteAll();
+        deckHanzi.deleteAll();
+        decks.deleteAll();
+        hanzi.deleteAll();
+        users.deleteAll();
     }
 
     @Test

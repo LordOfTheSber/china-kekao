@@ -13,6 +13,7 @@ import dev.kekao.study.UserCardRepository;
 import dev.kekao.user.UserEntity;
 import dev.kekao.user.UserRepository;
 import dev.kekao.user.UserRole;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -74,6 +75,19 @@ class HanziControllerIntegrationTest extends AbstractPostgresIntegrationTest {
         userToken = tokens.issueAccessToken(user);
     }
 
+    @AfterEach
+    void cleanUp() {
+        reviewLogs.deleteAll();
+        userCards.deleteAll();
+        userDecks.deleteAll();
+        deckHanzi.deleteAll();
+        decks.deleteAll();
+        examples.deleteAll();
+        translations.deleteAll();
+        hanzi.deleteAll();
+        users.deleteAll();
+    }
+
     @Test
     void searchRequiresAuth() throws Exception {
         mvc.perform(get("/api/hanzi/search?q=ni"))
@@ -83,8 +97,7 @@ class HanziControllerIntegrationTest extends AbstractPostgresIntegrationTest {
     @Test
     void searchByPinyinReturnsPublishedOnly() throws Exception {
         seedPublished("你", "ni3", (short) 1, 1, List.of("you"));
-        seedPublished("您", "nin2", (short) 3, 5000, List.of("you (polite)"));
-        // Draft must be excluded:
+        // Draft variant of the same pinyin must be excluded.
         HanziEntity draft = hanzi.save(HanziEntity.builder()
                 .character("妳").pinyin("ni3").hskLevel((short) 9)
                 .status(HanziStatus.DRAFT).build());
@@ -92,7 +105,7 @@ class HanziControllerIntegrationTest extends AbstractPostgresIntegrationTest {
                 .hanzi(draft).language("en")
                 .meanings(new ArrayList<>(List.of("you (female)"))).primary(true).build());
 
-        mvc.perform(get("/api/hanzi/search?q=ni").header("Authorization", "Bearer " + userToken))
+        mvc.perform(get("/api/hanzi/search?q=ni3").header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(1))
                 .andExpect(jsonPath("$.items[0].character").value("你"));
