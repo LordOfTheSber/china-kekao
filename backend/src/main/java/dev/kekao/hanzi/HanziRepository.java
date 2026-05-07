@@ -14,6 +14,8 @@ public interface HanziRepository extends JpaRepository<HanziEntity, Long> {
 
     Page<HanziEntity> findAllByStatus(HanziStatus status, Pageable pageable);
 
+    List<HanziEntity> findAllByStatus(HanziStatus status);
+
     List<HanziEntity> findAllByStatusAndHskLevelOrderByFrequencyRankAscIdAsc(HanziStatus status, Short hskLevel);
 
     /**

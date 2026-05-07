@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
  * intervention.</p>
  */
 @Component
+@Order(2)
 public class DeckBootstrap {
 
     static final List<Short> HSK_LEVELS = List.of((short) 1, (short) 2, (short) 3, (short) 4, (short) 5, (short) 6);

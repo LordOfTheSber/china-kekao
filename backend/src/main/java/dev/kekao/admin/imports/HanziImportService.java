@@ -164,11 +164,14 @@ public class HanziImportService {
         if (existing.isPresent()) {
             return refreshDraft(existing.get(), hskLevel, cedict);
         }
+        boolean complete = cedict != null
+                && cedict.pinyin() != null && !cedict.pinyin().isBlank()
+                && !cedict.meanings().isEmpty();
         HanziEntity created = hanzi.save(HanziEntity.builder()
                 .character(character)
                 .pinyin(cedict != null ? cedict.pinyin() : "")
                 .hskLevel((short) hskLevel)
-                .status(HanziStatus.DRAFT)
+                .status(complete ? HanziStatus.PUBLISHED : HanziStatus.DRAFT)
                 .build());
         if (cedict != null && !cedict.meanings().isEmpty()) {
             translations.save(buildTranslation(created, cedict));
@@ -194,7 +197,19 @@ public class HanziImportService {
             translations.save(buildTranslation(entity, cedict));
             changed = true;
         }
+        if (entity.getStatus() == HanziStatus.DRAFT && hasCompletePayload(entity)) {
+            entity.setStatus(HanziStatus.PUBLISHED);
+            changed = true;
+        }
         return changed ? ImportOutcome.UPDATED : ImportOutcome.SKIPPED;
+    }
+
+    private boolean hasCompletePayload(HanziEntity entity) {
+        if (entity.getPinyin() == null || entity.getPinyin().isBlank()) return false;
+        return translations.findByHanziId(entity.getId()).stream()
+                .filter(t -> "en".equals(t.getLanguage()))
+                .anyMatch(t -> t.getMeanings() != null
+                        && t.getMeanings().stream().anyMatch(m -> m != null && !m.isBlank()));
     }
 
     private HanziTranslationEntity buildTranslation(HanziEntity owner, CedictEntry cedict) {
