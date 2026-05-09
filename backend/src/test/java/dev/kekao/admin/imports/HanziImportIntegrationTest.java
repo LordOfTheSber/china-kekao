@@ -39,18 +39,31 @@ class HanziImportIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
-    void importPopulatesHsk1FromBundledSources() throws Exception {
+    void importPopulatesHsk1Through3FromBundledSources() throws Exception {
         HanziImportService.ImportReport report = service.runImport();
 
-        assertThat(report.created()).isGreaterThan(100);
+        assertThat(report.created()).isGreaterThan(500);
         List<HanziEntity> all = hanzi.findAll();
-        assertThat(all).hasSizeGreaterThan(100);
-        assertThat(all).allSatisfy(h -> assertThat(h.getHskLevel()).isEqualTo((short) 1));
-        // Characters with full CC-CEDICT data are auto-published; the rest stay
-        // in DRAFT for manual editing. Both states must be in the lifecycle.
+        assertThat(all).hasSizeGreaterThan(500);
         assertThat(all)
-                .extracting(HanziEntity::getStatus)
-                .containsAnyOf(HanziStatus.PUBLISHED, HanziStatus.DRAFT);
+                .extracting(HanziEntity::getHskLevel)
+                .containsOnly((short) 1, (short) 2, (short) 3);
+
+        long hsk1 = all.stream().filter(h -> h.getHskLevel() == 1).count();
+        long hsk2 = all.stream().filter(h -> h.getHskLevel() == 2).count();
+        long hsk3 = all.stream().filter(h -> h.getHskLevel() == 3).count();
+        assertThat(hsk1).isGreaterThan(150);
+        assertThat(hsk2).isGreaterThan(150);
+        assertThat(hsk3).isGreaterThan(250);
+
+        assertThat(all).allSatisfy(h -> assertThat(h.getPinyin()).isNotBlank());
+
+        long published = all.stream()
+                .filter(h -> h.getStatus() == HanziStatus.PUBLISHED)
+                .count();
+        // The bundled CC-CEDICT subset covers every HSK 1-3 char, so the vast
+        // majority should be auto-published.
+        assertThat(published).isGreaterThan((long) (all.size() * 0.9));
     }
 
     @Test

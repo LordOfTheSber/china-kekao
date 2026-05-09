@@ -67,6 +67,27 @@ mvn test
 
 Integration tests use Testcontainers and require a working Docker daemon.
 
+## Refreshing HSK / CC-CEDICT data
+
+The bundled hanzi catalogue covers HSK 1–3 (~600 characters). Sources:
+
+- HSK 2.0 official 2012 word lists from the
+  [`glxxyz/hskhsk.com`](https://github.com/glxxyz/hskhsk.com) repo
+  (single hanzi extracted from L1/L2/L3 vocabulary).
+- [CC-CEDICT](https://www.mdbg.net/chinese/dictionary?page=cc-cedict)
+  (CC BY-SA 4.0) — single-character subset for the listed hanzi.
+
+To regenerate `backend/src/main/resources/imports/hsk{1,2,3}.txt` and
+the bundled `cedict.sample.txt` from the upstream sources:
+
+```bash
+node scripts/import-data/fetch-hsk.mjs
+```
+
+The script is idempotent and only writes the four files above. For
+production deployments you can point `KEKAO_IMPORT_CEDICT_PATH` at the
+full CC-CEDICT dump instead of the bundled subset.
+
 ## Profiles
 
 `SPRING_PROFILES_ACTIVE` selects between:
