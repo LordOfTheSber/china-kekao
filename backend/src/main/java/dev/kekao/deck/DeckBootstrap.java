@@ -65,7 +65,7 @@ public class DeckBootstrap {
 
     private DeckEntity ensureDeck(Short level) {
         String slug = "hsk-" + level;
-        return decks.findBySlug(slug).orElseGet(() -> {
+        return decks.findBySlugAndOwnerIsNull(slug).orElseGet(() -> {
             DeckEntity created = decks.save(DeckEntity.builder()
                     .name("HSK " + level)
                     .slug(slug)
