@@ -62,8 +62,11 @@ kekao:
   import:
     cedict-path: ${KEKAO_IMPORT_CEDICT_PATH:}
     cedict-resource: imports/cedict.sample.txt
-    hsk-list-resource: imports/hsk1.txt
-    hsk-levels: ${KEKAO_IMPORT_HSK_LEVELS:1}
+    hsk-list-resources:
+      - imports/hsk1.txt
+      - imports/hsk2.txt
+      - imports/hsk3.txt
+    hsk-levels: ${KEKAO_IMPORT_HSK_LEVELS:1,2,3}
     default-language: en
     max-meanings-per-hanzi: ${KEKAO_IMPORT_MAX_MEANINGS:5}
     fail-on-missing-cedict: ${KEKAO_IMPORT_FAIL_ON_MISSING:false}

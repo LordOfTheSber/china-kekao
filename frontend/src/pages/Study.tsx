@@ -92,6 +92,10 @@ function SessionRunner({
   const productionMode = usePreferencesStore((s) => s.productionMode);
   const helpLevel = usePreferencesStore((s) => s.helpLevel);
   const withTones = usePreferencesStore((s) => s.withTones);
+  const recognitionPrompt = usePreferencesStore((s) => s.recognitionPrompt);
+  const productionPrompt = usePreferencesStore((s) => s.productionPrompt);
+  const askPinyin = recognitionPrompt !== "MEANING_ONLY";
+  const askMeaning = recognitionPrompt !== "PINYIN_ONLY";
 
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -138,7 +142,11 @@ function SessionRunner({
 
   function handleCheck() {
     if (!card || revealed) return;
-    const result = gradeAnswer(card.pinyin, acceptedMeanings, pinyin, meaning, { withTones });
+    const result = gradeAnswer(card.pinyin, acceptedMeanings, pinyin, meaning, {
+      withTones,
+      checkPinyin: askPinyin,
+      checkMeaning: askMeaning,
+    });
     setGrade(result);
     setRevealed(true);
   }
@@ -250,6 +258,8 @@ function SessionRunner({
               revealed={revealed}
               grade={grade}
               pinyinInputRef={pinyinInputRef}
+              askPinyin={askPinyin}
+              askMeaning={askMeaning}
             />
           ) : productionMode === "DRAWING" ? (
             <ProductionDrawing
@@ -258,12 +268,14 @@ function SessionRunner({
               helpLevel={helpLevel}
               onComplete={handleDrawingComplete}
               onSkip={handleDrawingSkip}
+              promptMode={productionPrompt}
             />
           ) : (
             <ProductionChoice
               key={card.userCardId}
               card={card}
               onComplete={handleChoiceComplete}
+              promptMode={productionPrompt}
             />
           )}
         </CardContent>
@@ -313,6 +325,8 @@ function RecognitionCard({
   revealed,
   grade,
   pinyinInputRef,
+  askPinyin,
+  askMeaning,
 }: {
   card: StudyCard;
   pinyin: string;
@@ -323,15 +337,28 @@ function RecognitionCard({
   revealed: boolean;
   grade: GradeResult | null;
   pinyinInputRef: React.RefObject<HTMLInputElement>;
+  askPinyin: boolean;
+  askMeaning: boolean;
 }) {
+  const promptLabel = askPinyin && askMeaning
+    ? "Type the pinyin and meaning"
+    : askPinyin
+      ? "Type the pinyin"
+      : "Type the meaning";
+
   return (
     <>
-      <div
-        className="text-7xl sm:text-8xl font-serif select-none"
-        lang="zh-Hans"
-        aria-label={`Hanzi character ${card.character ?? ""}`}
-      >
-        {card.character}
+      <div className="flex flex-col items-center gap-2">
+        <div
+          className="text-8xl sm:text-9xl font-serif select-none leading-none drop-shadow-sm"
+          lang="zh-Hans"
+          aria-label={`Hanzi character ${card.character ?? ""}`}
+        >
+          {card.character}
+        </div>
+        <p className="text-xs uppercase tracking-wider text-muted-foreground">
+          {promptLabel}
+        </p>
       </div>
 
       <form
@@ -341,66 +368,99 @@ function RecognitionCard({
           if (!revealed) onSubmit();
         }}
       >
-        <div className="flex flex-col gap-1">
-          <label htmlFor="pinyin" className="text-sm font-medium">Pinyin</label>
-          <Input
-            id="pinyin"
-            ref={pinyinInputRef}
-            value={pinyin}
-            onChange={(event) => onPinyinChange(event.target.value)}
-            disabled={revealed}
-            autoComplete="off"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            placeholder="e.g. ni3 or nǐ"
-          />
-          {revealed ? (
-            <p className={cn("text-xs", grade?.pinyinOk ? "text-emerald-600" : "text-destructive")}>
-              {grade?.pinyinOk ? "Correct pinyin" : `Expected: ${card.pinyin}`}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="meaning" className="text-sm font-medium">Meaning</label>
-          <Input
-            id="meaning"
-            value={meaning}
-            onChange={(event) => onMeaningChange(event.target.value)}
-            disabled={revealed}
-            autoComplete="off"
-            placeholder="English meaning"
-          />
-          {revealed ? (
-            <p
-              className={cn(
-                "text-xs",
-                grade?.meaningOk
-                  ? "text-emerald-600"
-                  : grade?.outcome === "NEAR"
-                    ? "text-amber-600"
-                    : "text-destructive",
-              )}
-            >
-              {grade?.meaningOk
-                ? "Correct meaning"
-                : `Accepted: ${(card.meanings ?? []).join(", ") || "—"}`}
-            </p>
-          ) : null}
-        </div>
+        {askPinyin ? (
+          <div className="flex flex-col gap-1">
+            <label htmlFor="pinyin" className="text-sm font-medium">Pinyin</label>
+            <Input
+              id="pinyin"
+              ref={pinyinInputRef}
+              value={pinyin}
+              onChange={(event) => onPinyinChange(event.target.value)}
+              disabled={revealed}
+              autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              placeholder="e.g. ni3 or nǐ"
+            />
+            {revealed ? (
+              <p className={cn("text-xs", grade?.pinyinOk ? "text-emerald-600" : "text-destructive")}>
+                {grade?.pinyinOk ? "Correct pinyin" : `Expected: ${card.pinyin}`}
+              </p>
+            ) : null}
+          </div>
+        ) : revealed ? (
+          <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+            <span className="text-muted-foreground">Pinyin: </span>
+            <span className="font-medium">{card.pinyin}</span>
+          </div>
+        ) : null}
+        {askMeaning ? (
+          <div className="flex flex-col gap-1">
+            <label htmlFor="meaning" className="text-sm font-medium">Meaning</label>
+            <Input
+              id="meaning"
+              value={meaning}
+              onChange={(event) => onMeaningChange(event.target.value)}
+              disabled={revealed}
+              autoComplete="off"
+              placeholder="English meaning"
+            />
+            {revealed ? (
+              <p
+                className={cn(
+                  "text-xs",
+                  grade?.meaningOk
+                    ? "text-emerald-600"
+                    : grade?.outcome === "NEAR"
+                      ? "text-amber-600"
+                      : "text-destructive",
+                )}
+              >
+                {grade?.meaningOk
+                  ? "Correct meaning"
+                  : `Accepted: ${(card.meanings ?? []).join(", ") || "—"}`}
+              </p>
+            ) : null}
+          </div>
+        ) : revealed ? (
+          <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+            <span className="text-muted-foreground">Meaning: </span>
+            <span className="font-medium">{(card.meanings ?? []).join(", ") || "—"}</span>
+          </div>
+        ) : null}
       </form>
     </>
   );
 }
 
-function ProductionPrompt({ card }: { card: StudyCard }) {
+function ProductionPrompt({
+  card,
+  promptMode,
+}: {
+  card: StudyCard;
+  promptMode: import("@/store/preferences").PromptMode;
+}) {
+  const showMeaning = promptMode !== "PINYIN_ONLY";
+  const showPinyin = promptMode !== "MEANING_ONLY";
   return (
     <div className="flex flex-col items-center gap-1 text-center">
-      <div className="text-2xl font-medium">
-        {(card.meanings ?? []).join(", ") || "—"}
-      </div>
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">
-        {card.pinyin}
+      {showMeaning ? (
+        <div className="text-2xl font-medium">
+          {(card.meanings ?? []).join(", ") || "—"}
+        </div>
+      ) : null}
+      {showPinyin ? (
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">
+          {card.pinyin}
+        </div>
+      ) : null}
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mt-1">
+        {showMeaning && showPinyin
+          ? "Recall the character"
+          : showPinyin
+            ? "Character for this pinyin"
+            : "Character for this meaning"}
       </div>
     </div>
   );
@@ -411,15 +471,17 @@ function ProductionDrawing({
   helpLevel,
   onComplete,
   onSkip,
+  promptMode,
 }: {
   card: StudyCard;
   helpLevel: import("@/store/preferences").HelpLevel;
   onComplete: (result: DrawingResult) => void;
   onSkip: () => void;
+  promptMode: import("@/store/preferences").PromptMode;
 }) {
   return (
     <div className="flex flex-col items-center gap-6 w-full">
-      <ProductionPrompt card={card} />
+      <ProductionPrompt card={card} promptMode={promptMode} />
       {card.character ? (
         <HanziDrawingPad
           character={card.character}
@@ -450,9 +512,11 @@ function ProductionDrawingMissing({ onSkip }: { onSkip: () => void }) {
 function ProductionChoice({
   card,
   onComplete,
+  promptMode,
 }: {
   card: StudyCard;
   onComplete: (rating: Rating) => void;
+  promptMode: import("@/store/preferences").PromptMode;
 }) {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["distractors", card.hanziId],
@@ -463,7 +527,7 @@ function ProductionChoice({
   if (isLoading) {
     return (
       <div className="flex flex-col items-center gap-4 w-full">
-        <ProductionPrompt card={card} />
+        <ProductionPrompt card={card} promptMode={promptMode} />
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-20 rounded-md bg-muted animate-pulse" />
@@ -493,7 +557,7 @@ function ProductionChoice({
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
-      <ProductionPrompt card={card} />
+      <ProductionPrompt card={card} promptMode={promptMode} />
       <HanziChoiceGrid
         correctCharacter={card.character}
         distractors={data.distractors}

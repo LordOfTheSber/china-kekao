@@ -81,17 +81,22 @@ public class HanziImportService {
 
     private Map<String, Integer> loadHskMap() throws IOException {
         int defaultLevel = props.hskLevels().getFirst();
-        Map<String, Integer> all = hskLoader.load(props.hskListResource(), defaultLevel);
         Set<Integer> wanted = Set.copyOf(props.hskLevels());
-        Map<String, Integer> filtered = new HashMap<>();
-        for (Map.Entry<String, Integer> e : all.entrySet()) {
-            if (wanted.contains(e.getValue())) {
-                filtered.put(e.getKey(), e.getValue());
+        Map<String, Integer> merged = new HashMap<>();
+        for (String resource : props.hskListResources()) {
+            Map<String, Integer> chunk = hskLoader.load(resource, defaultLevel);
+            for (Map.Entry<String, Integer> e : chunk.entrySet()) {
+                if (!wanted.contains(e.getValue())) continue;
+                Integer existing = merged.get(e.getKey());
+                if (existing == null || e.getValue() < existing) {
+                    merged.put(e.getKey(), e.getValue());
+                }
             }
+            log.debug("Loaded {} entries from {}", chunk.size(), resource);
         }
         log.info("Loaded {} HSK characters from {} (levels {})",
-                filtered.size(), props.hskListResource(), wanted);
-        return filtered;
+                merged.size(), props.hskListResources(), wanted);
+        return merged;
     }
 
     private Map<String, CedictEntry> loadCedictIndex(Set<String> wantedChars) throws IOException {
