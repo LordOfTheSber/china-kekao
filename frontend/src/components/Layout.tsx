@@ -51,11 +51,20 @@ export function Layout() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/40">
+      <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between gap-4">
-          <NavLink to="/" className="font-semibold tracking-tight">
-            china-kekao
+          <NavLink
+            to="/"
+            className="flex items-center gap-2 font-semibold tracking-tight"
+          >
+            <span
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-base font-serif"
+              aria-hidden
+            >
+              科
+            </span>
+            <span>china-kekao</span>
           </NavLink>
           <nav className="hidden md:flex items-center gap-1">
             {NAV_ITEMS.map((item) => (
@@ -65,8 +74,8 @@ export function Layout() {
                 end={item.end}
                 className={({ isActive }) =>
                   cn(
-                    "px-3 py-1.5 rounded-md text-sm hover:bg-accent",
-                    isActive && "bg-accent text-accent-foreground",
+                    "px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+                    isActive && "bg-accent text-foreground",
                   )
                 }
               >
@@ -77,7 +86,7 @@ export function Layout() {
           <div className="flex items-center gap-2">
             {user ? (
               <>
-                <span className="text-sm text-muted-foreground hidden sm:inline">
+                <span className="text-sm text-muted-foreground hidden lg:inline">
                   {user.email}
                 </span>
                 <Button variant="outline" size="sm" onClick={handleLogout}>
@@ -91,6 +100,27 @@ export function Layout() {
             )}
           </div>
         </div>
+        <nav className="md:hidden border-t">
+          <div className="container flex items-center gap-1 overflow-x-auto py-2 -mx-1 px-1 no-scrollbar">
+            {NAV_ITEMS.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  cn(
+                    "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                    isActive
+                      ? "bg-foreground text-background border-foreground"
+                      : "border-border text-muted-foreground hover:text-foreground",
+                  )
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
       </header>
       <main className="flex-1 container py-6">
         <Outlet />

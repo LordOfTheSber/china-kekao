@@ -40,15 +40,17 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="rounded-xl border bg-card p-6 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+            Welcome back
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Your study progress at a glance.
           </p>
         </div>
-        <Button asChild size="lg" disabled={isLoading}>
-          <Link to="/study">Start studying</Link>
+        <Button asChild size="lg" disabled={isLoading} className="self-start sm:self-auto">
+          <Link to="/study">Start studying →</Link>
         </Button>
       </div>
 

@@ -23,7 +23,14 @@ import {
   usePreferencesStore,
   type HelpLevel,
   type ProductionMode,
+  type PromptMode,
 } from "@/store/preferences";
+
+const PROMPT_OPTIONS: Array<{ value: PromptMode; label: string; description: string }> = [
+  { value: "BOTH", label: "Both", description: "Pinyin and meaning together (default)." },
+  { value: "PINYIN_ONLY", label: "Pinyin only", description: "Skip the meaning, focus on reading." },
+  { value: "MEANING_ONLY", label: "Meaning only", description: "Skip the pinyin, focus on the gloss." },
+];
 
 const PRODUCTION_OPTIONS: Array<{ value: ProductionMode; label: string; description: string }> = [
   { value: "DRAWING", label: "Drawing", description: "Draw the character stroke by stroke." },
@@ -259,6 +266,18 @@ function SettingsForm({
         </CardContent>
       </Card>
 
+      <PromptModeCard
+        title="Recognition prompt"
+        description="When you see the character, what should you type?"
+        prefKey="recognitionPrompt"
+      />
+
+      <PromptModeCard
+        title="Production prompt"
+        description="When you need to recall the character, what hint do you see?"
+        prefKey="productionPrompt"
+      />
+
       <Card>
         <CardHeader>
           <CardTitle>Pinyin tone checking</CardTitle>
@@ -288,6 +307,40 @@ function SettingsForm({
         </Button>
       </div>
     </div>
+  );
+}
+
+function PromptModeCard({
+  title,
+  description,
+  prefKey,
+}: {
+  title: string;
+  description: string;
+  prefKey: "recognitionPrompt" | "productionPrompt";
+}) {
+  const value = usePreferencesStore((s) => s[prefKey]);
+  const setRecognition = usePreferencesStore((s) => s.setRecognitionPrompt);
+  const setProduction = usePreferencesStore((s) => s.setProductionPrompt);
+  const setter = prefKey === "recognitionPrompt" ? setRecognition : setProduction;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent className="grid sm:grid-cols-3 gap-2">
+        {PROMPT_OPTIONS.map((opt) => (
+          <OptionButton
+            key={opt.value}
+            selected={value === opt.value}
+            label={opt.label}
+            description={opt.description}
+            onClick={() => setter(opt.value)}
+          />
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 

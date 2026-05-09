@@ -83,30 +83,37 @@ export function gradeAnswer(
   acceptedMeanings: string[],
   userPinyin: string,
   userMeaning: string,
-  options: { withTones?: boolean } = {},
+  options: { withTones?: boolean; checkPinyin?: boolean; checkMeaning?: boolean } = {},
 ): GradeResult {
   const withTones = options.withTones ?? true;
+  const checkPinyin = options.checkPinyin ?? true;
+  const checkMeaning = options.checkMeaning ?? true;
+
   const normalizedExpected = normalizePinyin(expectedPinyin, withTones);
   const normalizedUserPinyin = normalizePinyin(userPinyin, withTones);
-  const pinyinOk = normalizedExpected.length > 0 && normalizedExpected === normalizedUserPinyin;
+  const pinyinOk = !checkPinyin
+    ? true
+    : normalizedExpected.length > 0 && normalizedExpected === normalizedUserPinyin;
 
   const normalizedAnswer = normalizeMeaning(userMeaning);
   let bestDistance = Number.POSITIVE_INFINITY;
   let bestMeaning: string | null = null;
-  let meaningOk = false;
-  for (const meaning of acceptedMeanings) {
-    const normalized = normalizeMeaning(meaning);
-    if (!normalized) continue;
-    if (normalized === normalizedAnswer) {
-      meaningOk = true;
-      bestMeaning = meaning;
-      bestDistance = 0;
-      break;
-    }
-    const distance = levenshtein(normalized, normalizedAnswer);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestMeaning = meaning;
+  let meaningOk = !checkMeaning;
+  if (checkMeaning) {
+    for (const meaning of acceptedMeanings) {
+      const normalized = normalizeMeaning(meaning);
+      if (!normalized) continue;
+      if (normalized === normalizedAnswer) {
+        meaningOk = true;
+        bestMeaning = meaning;
+        bestDistance = 0;
+        break;
+      }
+      const distance = levenshtein(normalized, normalizedAnswer);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestMeaning = meaning;
+      }
     }
   }
 
@@ -121,7 +128,7 @@ export function gradeAnswer(
     };
   }
 
-  if (pinyinOk && normalizedAnswer.length > 0 && bestDistance <= 1) {
+  if (pinyinOk && checkMeaning && normalizedAnswer.length > 0 && bestDistance <= 1) {
     return {
       outcome: "NEAR",
       suggestedRating: "HARD",
