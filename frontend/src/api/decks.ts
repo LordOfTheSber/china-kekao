@@ -65,6 +65,10 @@ export async function subscribeDeck(deckId: number): Promise<SubscribeResponse> 
   return response.data;
 }
 
+export async function unsubscribeDeck(deckId: number): Promise<void> {
+  await api.delete(`/decks/${deckId}/subscribe`);
+}
+
 export async function createDeck(payload: CreateDeckRequest): Promise<DeckView> {
   const response = await api.post<DeckView>("/decks", payload);
   return response.data;

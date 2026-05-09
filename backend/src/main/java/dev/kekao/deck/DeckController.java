@@ -127,4 +127,16 @@ public class DeckController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @DeleteMapping("/{id}/subscribe")
+    public ResponseEntity<Void> unsubscribe(@PathVariable Long id,
+                                            @AuthenticationPrincipal Jwt jwt) {
+        long userId = Long.parseLong(jwt.getSubject());
+        try {
+            service.unsubscribe(userId, id);
+            return ResponseEntity.noContent().build();
+        } catch (NoSuchElementException ex) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

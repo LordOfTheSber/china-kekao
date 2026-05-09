@@ -250,6 +250,20 @@ public class DeckService {
         return new SubscribeResponse(deck.getId(), newlyCreated, entries.size(), already);
     }
 
+    @Transactional
+    public boolean unsubscribe(Long userId, Long deckId) {
+        DeckEntity deck = decks.findById(deckId)
+                .orElseThrow(() -> new NoSuchElementException("Deck not found: " + deckId));
+        ensureVisible(deck, userId);
+
+        UserDeckId udId = new UserDeckId(userId, deck.getId());
+        if (!userDecks.existsById(udId)) {
+            return false;
+        }
+        userDecks.deleteById(udId);
+        return true;
+    }
+
     private int ensureCard(UserEntity user, HanziEntity hanzi, StudyMode mode, Instant now) {
         if (userCards.findByUserIdAndHanziIdAndMode(user.getId(), hanzi.getId(), mode).isPresent()) {
             return 0;

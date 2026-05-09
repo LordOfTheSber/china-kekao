@@ -7,6 +7,8 @@ import {
   deleteDeck,
   fetchDeck,
   removeDeckHanzi,
+  subscribeDeck,
+  unsubscribeDeck,
   updateDeck,
   type DeckDetailView,
 } from "@/api/decks";
@@ -79,16 +81,19 @@ export function DeckEditPage() {
         <Button asChild variant="ghost" size="sm">
           <Link to="/decks">← All decks</Link>
         </Button>
-        {data.owned ? (
-          <DeleteDeckButton
-            deckId={data.id}
-            deckName={data.name}
-            onDeleted={() => {
-              queryClient.invalidateQueries({ queryKey: ["decks"] });
-              navigate("/decks");
-            }}
-          />
-        ) : null}
+        <div className="flex items-center gap-2">
+          <SubscribeToggleButton deck={data} />
+          {data.owned ? (
+            <DeleteDeckButton
+              deckId={data.id}
+              deckName={data.name}
+              onDeleted={() => {
+                queryClient.invalidateQueries({ queryKey: ["decks"] });
+                navigate("/decks");
+              }}
+            />
+          ) : null}
+        </div>
       </div>
 
       <DeckMetaCard deck={data} editable={data.owned} />
@@ -303,6 +308,93 @@ function RemoveHanziButton({
       onClick={() => mutation.mutate()}
     >
       Remove
+    </Button>
+  );
+}
+
+function SubscribeToggleButton({ deck }: { deck: DeckDetailView }) {
+  const queryClient = useQueryClient();
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["decks"] });
+    queryClient.invalidateQueries({ queryKey: ["deck", deck.id] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["study-session"] });
+  };
+
+  const subscribe = useMutation({
+    mutationFn: () => subscribeDeck(deck.id),
+    onSuccess: (resp) => {
+      toast({
+        title: resp.alreadySubscribed ? "Already subscribed" : "Subscribed",
+        description:
+          resp.newlyCreatedCards > 0
+            ? `Added ${resp.newlyCreatedCards} new cards to your queue.`
+            : "Your queue already contains every card from this deck.",
+      });
+      invalidate();
+    },
+    onError: (error) => {
+      toast({
+        title: "Subscribe failed",
+        description: extractErrorMessage(error, "Try again"),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const unsubscribe = useMutation({
+    mutationFn: () => unsubscribeDeck(deck.id),
+    onSuccess: () => {
+      toast({
+        title: "Unsubscribed",
+        description: "Your existing study progress is preserved.",
+      });
+      invalidate();
+    },
+    onError: (error) => {
+      toast({
+        title: "Unsubscribe failed",
+        description: extractErrorMessage(error, "Try again"),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const busy = subscribe.isPending || unsubscribe.isPending;
+
+  if (deck.subscribed) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={busy}
+        onClick={() => {
+          if (
+            confirm(
+              `Unsubscribe from “${deck.name}”? Your existing study progress is preserved.`,
+            )
+          ) {
+            unsubscribe.mutate();
+          }
+        }}
+      >
+        Unsubscribe
+      </Button>
+    );
+  }
+  return (
+    <Button
+      size="sm"
+      disabled={busy || deck.entries.length === 0}
+      onClick={() => subscribe.mutate()}
+      title={
+        deck.entries.length === 0
+          ? "Add hanzi to this deck before subscribing"
+          : undefined
+      }
+    >
+      Subscribe
     </Button>
   );
 }

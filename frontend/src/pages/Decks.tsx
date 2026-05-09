@@ -6,6 +6,7 @@ import {
   createDeck,
   fetchDecks,
   subscribeDeck,
+  unsubscribeDeck,
   type DeckView,
 } from "@/api/decks";
 import { extractErrorMessage } from "@/api/auth";
@@ -58,6 +59,29 @@ export function DecksPage() {
       });
     },
   });
+
+  const unsubscribeMutation = useMutation({
+    mutationFn: unsubscribeDeck,
+    onSuccess: () => {
+      toast({
+        title: "Unsubscribed",
+        description:
+          "Existing cards stay in your queue, but new hanzi from this deck won't be added automatically.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["decks"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["study-session"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Unsubscribe failed",
+        description: extractErrorMessage(error, "Try again"),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const busy = subscribeMutation.isPending || unsubscribeMutation.isPending;
 
   if (isLoading) {
     return (
@@ -114,8 +138,9 @@ export function DecksPage() {
               <DeckCard
                 key={deck.id}
                 deck={deck}
-                disabled={subscribeMutation.isPending}
+                disabled={busy}
                 onSubscribe={() => subscribeMutation.mutate(deck.id)}
+                onUnsubscribe={() => unsubscribeMutation.mutate(deck.id)}
               />
             ))}
           </div>
@@ -136,8 +161,9 @@ export function DecksPage() {
               <DeckCard
                 key={deck.id}
                 deck={deck}
-                disabled={subscribeMutation.isPending}
+                disabled={busy}
                 onSubscribe={() => subscribeMutation.mutate(deck.id)}
+                onUnsubscribe={() => unsubscribeMutation.mutate(deck.id)}
               />
             ))}
           </div>
@@ -153,10 +179,12 @@ function DeckCard({
   deck,
   disabled,
   onSubscribe,
+  onUnsubscribe,
 }: {
   deck: DeckView;
   disabled: boolean;
   onSubscribe: () => void;
+  onUnsubscribe: () => void;
 }) {
   return (
     <Card>
@@ -181,6 +209,24 @@ function DeckCard({
           {deck.owned ? (
             <Button asChild size="sm" variant="outline">
               <Link to={`/decks/${deck.id}`}>Edit</Link>
+            </Button>
+          ) : null}
+          {deck.subscribed ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={disabled}
+              onClick={() => {
+                if (
+                  confirm(
+                    `Unsubscribe from “${deck.name}”? Your existing study progress is preserved.`,
+                  )
+                ) {
+                  onUnsubscribe();
+                }
+              }}
+            >
+              Unsubscribe
             </Button>
           ) : null}
           <Button
