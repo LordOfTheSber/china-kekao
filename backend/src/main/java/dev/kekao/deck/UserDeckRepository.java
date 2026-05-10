@@ -7,3 +7,4 @@ import java.util.List;
 public interface UserDeckRepository extends JpaRepository<UserDeckEntity, UserDeckId> {
     List<UserDeckEntity> findByUserId(Long userId);
 }
+

@@ -8,6 +8,7 @@ import { RegisterPage } from "@/pages/Register";
 import { DashboardPage } from "@/pages/Dashboard";
 import { StudyPage } from "@/pages/Study";
 import { DecksPage } from "@/pages/Decks";
+import { DeckEditPage } from "@/pages/DeckEdit";
 import { HanziDetailPage } from "@/pages/HanziDetail";
 import { SearchPage } from "@/pages/Search";
 import { StatsPage } from "@/pages/Stats";
@@ -41,6 +42,14 @@ export function App() {
           element={
             <ProtectedRoute>
               <DecksPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/decks/:id"
+          element={
+            <ProtectedRoute>
+              <DeckEditPage />
             </ProtectedRoute>
           }
         />
