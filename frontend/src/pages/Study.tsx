@@ -521,7 +521,10 @@ function ProductionChoice({
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["distractors", card.hanziId],
     queryFn: () => fetchDistractors(card.hanziId, 5),
-    staleTime: 5 * 60 * 1000,
+    // Distractors only depend on the target hanzi and its HSK level, not on the user, so a
+    // long stale window prevents the same call from being re-issued when a card recurs.
+    staleTime: 60 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   });
 
   if (isLoading) {

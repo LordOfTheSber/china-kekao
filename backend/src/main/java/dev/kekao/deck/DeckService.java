@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class DeckService {
@@ -63,15 +62,28 @@ public class DeckService {
 
     @Transactional(readOnly = true)
     public List<DeckView> listDecks(Long userId) {
-        Set<Long> subscribed = userDecks.findByUserId(userId).stream()
-                .map(ud -> ud.getDeck().getId())
-                .collect(Collectors.toSet());
+        Set<Long> subscribed = new HashSet<>(userDecks.findDeckIdsByUserId(userId));
 
         List<DeckEntity> all = new ArrayList<>(decks.findAllBySystemTrueOrderByIdAsc());
         all.addAll(decks.findAllByOwnerIdOrderByIdAsc(userId));
 
+        if (all.isEmpty()) return List.of();
+        List<Long> deckIds = all.stream().map(DeckEntity::getId).toList();
+        Map<Long, Long> countByDeck = new HashMap<>();
+        for (Object[] row : deckHanzi.countsByDeckIds(deckIds)) {
+            countByDeck.put((Long) row[0], ((Number) row[1]).longValue());
+        }
+
         return all.stream()
-                .map(deck -> toView(deck, userId, subscribed.contains(deck.getId())))
+                .map(deck -> new DeckView(
+                        deck.getId(),
+                        deck.getName(),
+                        deck.getSlug(),
+                        deck.getDescription(),
+                        deck.isSystem(),
+                        isOwnedBy(deck, userId),
+                        countByDeck.getOrDefault(deck.getId(), 0L).intValue(),
+                        subscribed.contains(deck.getId())))
                 .toList();
     }
 
@@ -81,9 +93,7 @@ public class DeckService {
                 .orElseThrow(() -> new NoSuchElementException("Deck not found: " + deckId));
         ensureVisible(deck, userId);
 
-        Set<Long> subscribed = userDecks.findByUserId(userId).stream()
-                .map(ud -> ud.getDeck().getId())
-                .collect(Collectors.toSet());
+        boolean subscribed = userDecks.existsById(new UserDeckId(userId, deckId));
 
         List<DeckHanziEntity> entries = deckHanzi.findByDeckIdOrderByPositionAsc(deckId);
         List<Long> hanziIds = entries.stream().map(e -> e.getHanzi().getId()).toList();
@@ -109,7 +119,7 @@ public class DeckService {
                 deck.getDescription(),
                 deck.isSystem(),
                 isOwnedBy(deck, userId),
-                subscribed.contains(deck.getId()),
+                subscribed,
                 entries.size(),
                 entryViews);
     }
@@ -170,31 +180,41 @@ public class DeckService {
                 .orElseThrow(() -> new NoSuchElementException("Deck not found: " + deckId));
         ensureOwned(deck, userId);
 
-        int nextPos = deckHanzi.findMaxPositionByDeckId(deckId) + 1;
-        Set<Long> seen = new HashSet<>();
+        // Distinct, non-null candidates that are not already in the deck.
+        Set<Long> existing = deckHanzi.findHanziIdsByDeckId(deckId);
+        java.util.LinkedHashSet<Long> toAdd = new java.util.LinkedHashSet<>();
         for (Long id : hanziIds) {
-            if (id == null || !seen.add(id)) continue;
-            if (deckHanzi.findByDeckIdAndHanziId(deckId, id).isPresent()) continue;
-            HanziEntity h = hanzi.findById(id)
-                    .orElseThrow(() -> new NoSuchElementException("Hanzi not found: " + id));
-            deckHanzi.save(DeckHanziEntity.builder()
-                    .id(new DeckHanziId(deckId, h.getId()))
-                    .deck(deck)
-                    .hanzi(h)
-                    .position(nextPos++)
-                    .build());
+            if (id == null || existing.contains(id)) continue;
+            toAdd.add(id);
         }
 
-        // If the user is already subscribed to this deck, also create user_cards
-        // for the newly added hanzi so the additions show up in the study queue.
-        if (userDecks.existsById(new UserDeckId(userId, deckId))) {
-            UserEntity user = users.getReferenceById(userId);
-            Instant now = Instant.now();
-            for (DeckHanziEntity e : deckHanzi.findByDeckIdOrderByPositionAsc(deckId)) {
-                HanziEntity h = e.getHanzi();
-                if (h.getStatus() != HanziStatus.PUBLISHED) continue;
-                ensureCard(user, h, StudyMode.RECOGNITION, now);
-                ensureCard(user, h, StudyMode.PRODUCTION, now);
+        if (!toAdd.isEmpty()) {
+            // Batch-load hanzi entities, then batch-insert deck_hanzi rows.
+            Map<Long, HanziEntity> hanziById = new HashMap<>();
+            for (HanziEntity h : hanzi.findAllById(toAdd)) {
+                hanziById.put(h.getId(), h);
+            }
+            int nextPos = deckHanzi.findMaxPositionByDeckId(deckId) + 1;
+            List<DeckHanziEntity> rows = new ArrayList<>(toAdd.size());
+            for (Long id : toAdd) {
+                HanziEntity h = hanziById.get(id);
+                if (h == null) throw new NoSuchElementException("Hanzi not found: " + id);
+                rows.add(DeckHanziEntity.builder()
+                        .id(new DeckHanziId(deckId, h.getId()))
+                        .deck(deck)
+                        .hanzi(h)
+                        .position(nextPos++)
+                        .build());
+            }
+            deckHanzi.saveAll(rows);
+
+            if (userDecks.existsById(new UserDeckId(userId, deckId))) {
+                UserEntity user = users.getReferenceById(userId);
+                List<HanziEntity> publishedNew = rows.stream()
+                        .map(DeckHanziEntity::getHanzi)
+                        .filter(h -> h.getStatus() == HanziStatus.PUBLISHED)
+                        .toList();
+                bulkEnsureCards(user, publishedNew, Instant.now());
             }
         }
 
@@ -207,16 +227,8 @@ public class DeckService {
                 .orElseThrow(() -> new NoSuchElementException("Deck not found: " + deckId));
         ensureOwned(deck, userId);
         deckHanzi.deleteByDeckIdAndHanziId(deckId, hanziId);
-
-        // Re-pack positions to keep them contiguous.
-        List<DeckHanziEntity> remaining = deckHanzi.findByDeckIdOrderByPositionAsc(deckId);
-        for (int i = 0; i < remaining.size(); i++) {
-            DeckHanziEntity entry = remaining.get(i);
-            if (entry.getPosition() == null || entry.getPosition() != i) {
-                entry.setPosition(i);
-                deckHanzi.save(entry);
-            }
-        }
+        // Single SQL statement repacks remaining positions to be contiguous.
+        deckHanzi.repackPositions(deckId);
     }
 
     @Transactional
@@ -239,15 +251,48 @@ public class DeckService {
         }
 
         List<DeckHanziEntity> entries = deckHanzi.findByDeckIdOrderByPositionAsc(deckId);
-        int newlyCreated = 0;
-        Instant now = Instant.now();
-        for (DeckHanziEntity entry : entries) {
-            HanziEntity h = entry.getHanzi();
-            if (h.getStatus() != HanziStatus.PUBLISHED) continue;
-            newlyCreated += ensureCard(user, h, StudyMode.RECOGNITION, now);
-            newlyCreated += ensureCard(user, h, StudyMode.PRODUCTION, now);
-        }
+        List<HanziEntity> published = entries.stream()
+                .map(DeckHanziEntity::getHanzi)
+                .filter(h -> h.getStatus() == HanziStatus.PUBLISHED)
+                .toList();
+        int newlyCreated = bulkEnsureCards(user, published, Instant.now());
         return new SubscribeResponse(deck.getId(), newlyCreated, entries.size(), already);
+    }
+
+    /**
+     * Creates RECOGNITION + PRODUCTION cards for any (hanzi, mode) pair the user does not yet
+     * have. Performs a single SELECT to discover existing pairs and a single batched INSERT.
+     */
+    private int bulkEnsureCards(UserEntity user, List<HanziEntity> hanziList, Instant now) {
+        if (hanziList.isEmpty()) return 0;
+        List<Long> ids = hanziList.stream().map(HanziEntity::getId).toList();
+        Set<String> existing = new HashSet<>();
+        for (Object[] row : userCards.findExistingHanziModes(user.getId(), ids)) {
+            existing.add(row[0] + ":" + ((StudyMode) row[1]).name());
+        }
+        List<UserCardEntity> toInsert = new ArrayList<>();
+        for (HanziEntity h : hanziList) {
+            for (StudyMode mode : new StudyMode[] {StudyMode.RECOGNITION, StudyMode.PRODUCTION}) {
+                if (existing.contains(h.getId() + ":" + mode.name())) continue;
+                toInsert.add(UserCardEntity.builder()
+                        .user(user)
+                        .hanzi(h)
+                        .mode(mode)
+                        .state(CardState.NEW)
+                        .stability(0.0)
+                        .difficulty(0.0)
+                        .dueDate(now)
+                        .reps(0)
+                        .lapses(0)
+                        .elapsedDays(0.0)
+                        .scheduledDays(0.0)
+                        .algorithmVersion("FSRS-5")
+                        .build());
+            }
+        }
+        if (toInsert.isEmpty()) return 0;
+        userCards.saveAll(toInsert);
+        return toInsert.size();
     }
 
     @Transactional
@@ -262,27 +307,6 @@ public class DeckService {
         }
         userDecks.deleteById(udId);
         return true;
-    }
-
-    private int ensureCard(UserEntity user, HanziEntity hanzi, StudyMode mode, Instant now) {
-        if (userCards.findByUserIdAndHanziIdAndMode(user.getId(), hanzi.getId(), mode).isPresent()) {
-            return 0;
-        }
-        userCards.save(UserCardEntity.builder()
-                .user(user)
-                .hanzi(hanzi)
-                .mode(mode)
-                .state(CardState.NEW)
-                .stability(0.0)
-                .difficulty(0.0)
-                .dueDate(now)
-                .reps(0)
-                .lapses(0)
-                .elapsedDays(0.0)
-                .scheduledDays(0.0)
-                .algorithmVersion("FSRS-5")
-                .build());
-        return 1;
     }
 
     private DeckView toView(DeckEntity deck, Long userId, boolean subscribed) {

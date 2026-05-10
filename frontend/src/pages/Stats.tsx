@@ -44,6 +44,10 @@ export function StatsPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["stats-overview", days],
     queryFn: () => fetchOverview(days),
+    // Reviews complete in the background, but the historical data does not change for the
+    // already-rendered range. Cache aggressively so toggling 7/30/90 doesn't refetch.
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   if (isLoading) {
