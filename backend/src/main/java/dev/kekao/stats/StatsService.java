@@ -79,21 +79,42 @@ public class StatsService {
     @Transactional(readOnly = true)
     public DashboardView dashboard(Long userId) {
         Instant now = Instant.now(clock);
-        long dueToday = userCards.countDueReviewCardsForUser(userId, CardState.NEW, now);
-        long newAvailable = userCards.countCardsInStateForUser(userId, CardState.NEW);
+
+        // One grouped query covers due-today (any state except NEW) and new-available counts
+        // for cards belonging to the user's subscribed decks.
+        long dueToday = 0;
+        long newAvailable = 0;
+        for (Object[] row : userCards.aggregateSubscribedCardCounts(userId, now)) {
+            CardState state = (CardState) row[0];
+            long dueNow = ((Number) row[1]).longValue();
+            long total = ((Number) row[2]).longValue();
+            if (state == CardState.NEW) {
+                newAvailable = total;
+            } else {
+                dueToday += dueNow;
+            }
+        }
         long learnedTotal = userCards.countByUserIdAndState(userId, CardState.REVIEW);
 
-        Instant sevenDaysAgo = now.minus(7, ChronoUnit.DAYS);
-        List<Object[]> last7d = reviewLogs.findUserReviewsSince(userId, sevenDaysAgo);
-        double accuracy = computeAccuracy(last7d);
-
+        // Streak window already covers the 7d accuracy window, so a single query is enough.
         Instant streakWindow = now.minus(STREAK_LOOKBACK_DAYS, ChronoUnit.DAYS);
-        List<Object[]> rangeLogs = last7d.size() > 0 && sevenDaysAgo.isBefore(streakWindow)
-                ? last7d
-                : reviewLogs.findUserReviewsSince(userId, streakWindow);
+        Instant sevenDaysAgo = now.minus(7, ChronoUnit.DAYS);
+        List<Object[]> rangeLogs = reviewLogs.findUserReviewsSince(userId, streakWindow);
+
+        double accuracy = computeAccuracy(filterSince(rangeLogs, sevenDaysAgo));
         int streak = computeCurrentStreak(rangeLogs, now);
 
         return new DashboardView(dueToday, newAvailable, learnedTotal, streak, accuracy);
+    }
+
+    private static List<Object[]> filterSince(List<Object[]> logs, Instant since) {
+        if (logs.isEmpty()) return logs;
+        java.util.ArrayList<Object[]> out = new java.util.ArrayList<>();
+        for (Object[] row : logs) {
+            Instant at = (Instant) row[0];
+            if (!at.isBefore(since)) out.add(row);
+        }
+        return out;
     }
 
     private static double computeAccuracy(List<Object[]> logs) {

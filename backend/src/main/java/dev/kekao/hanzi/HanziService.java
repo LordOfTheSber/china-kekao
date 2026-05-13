@@ -62,8 +62,7 @@ public class HanziService {
         HanziEntity entity = hanzi.findById(hanziId)
                 .orElseThrow(() -> new NoSuchElementException("Hanzi not found: " + hanziId));
         List<String> meanings = findEnglishMeanings(entity.getId());
-        List<HanziExampleView> exampleViews = examples.findByHanziId(entity.getId()).stream()
-                .filter(ex -> DEFAULT_LANGUAGE.equals(ex.getLanguage()))
+        List<HanziExampleView> exampleViews = examples.findByHanziIdAndLanguage(entity.getId(), DEFAULT_LANGUAGE).stream()
                 .map(ex -> new HanziExampleView(ex.getSentence(), ex.getPinyin(), ex.getTranslation()))
                 .toList();
         List<UserCardSummary> cards = userId == null ? List.of() :
@@ -113,10 +112,8 @@ public class HanziService {
     }
 
     private List<String> findEnglishMeanings(Long hanziId) {
-        return translations.findByHanziId(hanziId).stream()
-                .filter(t -> DEFAULT_LANGUAGE.equals(t.getLanguage()))
+        return translations.findMeaningsByHanziIdAndLanguage(hanziId, DEFAULT_LANGUAGE).stream()
                 .findFirst()
-                .map(HanziTranslationEntity::getMeanings)
                 .map(List::copyOf)
                 .orElse(List.of());
     }

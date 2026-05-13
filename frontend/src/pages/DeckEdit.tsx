@@ -315,11 +315,12 @@ function RemoveHanziButton({
 function SubscribeToggleButton({ deck }: { deck: DeckDetailView }) {
   const queryClient = useQueryClient();
 
+  // The study-session query already refetches on mount (staleTime: 0), so invalidating it
+  // here would only trigger an extra round-trip while the user is still on this page.
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["decks"] });
     queryClient.invalidateQueries({ queryKey: ["deck", deck.id] });
     queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-    queryClient.invalidateQueries({ queryKey: ["study-session"] });
   };
 
   const subscribe = useMutation({
@@ -477,10 +478,11 @@ function AddHanziDialog({
         title: "Hanzi added",
         description: `Deck now contains ${deck.hanziCount} characters.`,
       });
-      queryClient.invalidateQueries({ queryKey: ["deck", deckId] });
+      // The mutation response already contains the fresh deck detail, so prime the cache
+      // instead of triggering a follow-up GET /api/decks/{id}.
+      queryClient.setQueryData(["deck", deckId], deck);
       queryClient.invalidateQueries({ queryKey: ["decks"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["study-session"] });
       setSelected([]);
       setQuery("");
       onOpenChange(false);
