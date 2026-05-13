@@ -65,15 +65,15 @@ export function StatsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-3xl mx-auto">
-      <div className="flex items-end justify-between gap-2 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold">Statistics</h1>
-          <p className="text-sm text-muted-foreground">
+    <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Statistics</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Reviews per day, accuracy trend, and card-state breakdown.
           </p>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1.5 flex-wrap">
           {RANGE_OPTIONS.map((opt) => (
             <Button
               key={opt.days}
@@ -113,7 +113,7 @@ function ReviewsPerDayCard({ overview }: { overview: OverviewView }) {
           {total} reviews over the last {overview.days} days.
         </CardDescription>
       </CardHeader>
-      <CardContent className="h-64">
+      <CardContent className="h-64 w-full overflow-hidden">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -142,7 +142,7 @@ function AccuracyCard({ overview }: { overview: OverviewView }) {
         <CardTitle className="text-base">Accuracy by day</CardTitle>
         <CardDescription>Share of Good and Easy ratings.</CardDescription>
       </CardHeader>
-      <CardContent className="h-56">
+      <CardContent className="h-56 w-full overflow-hidden">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -172,7 +172,7 @@ function StatesBreakdownCard({ overview }: { overview: OverviewView }) {
         <CardTitle className="text-base">Card states</CardTitle>
         <CardDescription>Distribution across all of your cards.</CardDescription>
       </CardHeader>
-      <CardContent className="h-64">
+      <CardContent className="h-64 w-full overflow-hidden">
         {total === 0 ? (
           <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
             No cards yet. Subscribe to a deck to start studying.

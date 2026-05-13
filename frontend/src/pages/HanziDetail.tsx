@@ -48,17 +48,19 @@ export function HanziDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-3xl mx-auto">
+    <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full">
       <Card>
         <CardContent className="pt-6 flex flex-col sm:flex-row gap-6 items-center sm:items-start">
           <StrokeAnimation
             character={data.character}
             hasStrokeData={data.hasStrokeData}
           />
-          <div className="flex flex-col gap-2 flex-1">
-            <h1 className="text-3xl font-semibold leading-none">{data.character}</h1>
-            <div className="flex items-baseline gap-3 flex-wrap">
-              <span className="text-lg">{data.pinyin}</span>
+          <div className="flex flex-col gap-2 flex-1 min-w-0 text-center sm:text-left">
+            <h1 className="text-3xl sm:text-4xl font-semibold leading-tight font-serif" lang="zh-Hans">
+              {data.character}
+            </h1>
+            <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap justify-center sm:justify-start">
+              <span className="text-lg break-words">{data.pinyin}</span>
               {data.hskLevel != null ? (
                 <span className="text-xs uppercase tracking-wide text-muted-foreground">
                   HSK {data.hskLevel}
@@ -95,9 +97,26 @@ function StrokeAnimation({
   character: string;
   hasStrokeData: boolean;
 }) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const writerRef = useRef<ReturnType<typeof HanziWriter.create> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [size, setSize] = useState(220);
+
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+    const el = wrapperRef.current;
+    const measure = () => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) {
+        setSize(Math.max(200, Math.min(260, Math.round(w))));
+      }
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -106,8 +125,8 @@ function StrokeAnimation({
     let cancelled = false;
     try {
       const writer = HanziWriter.create(containerRef.current, character, {
-        width: 220,
-        height: 220,
+        width: size,
+        height: size,
         padding: 8,
         showCharacter: true,
         showOutline: true,
@@ -126,7 +145,7 @@ function StrokeAnimation({
       cancelled = true;
       writerRef.current = null;
     };
-  }, [character]);
+  }, [character, size]);
 
   function animate() {
     writerRef.current?.animateCharacter();
@@ -134,8 +153,8 @@ function StrokeAnimation({
 
   if (!hasStrokeData) {
     return (
-      <div className="flex flex-col items-center gap-2">
-        <div className="w-[220px] h-[220px] flex items-center justify-center text-7xl font-serif border rounded-md">
+      <div className="flex flex-col items-center gap-2 w-full max-w-[240px] mx-auto">
+        <div className="aspect-square w-full flex items-center justify-center text-7xl font-serif border rounded-lg bg-muted/30">
           {character}
         </div>
         <p className="text-xs text-muted-foreground">No stroke data available.</p>
@@ -144,8 +163,14 @@ function StrokeAnimation({
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div ref={containerRef} className="w-[220px] h-[220px] border rounded-md" />
+    <div
+      ref={wrapperRef}
+      className="flex flex-col items-center gap-2 w-full max-w-[240px] mx-auto"
+    >
+      <div
+        ref={containerRef}
+        className="aspect-square w-full border rounded-lg bg-muted/20 flex items-center justify-center"
+      />
       {error ? (
         <p className="text-xs text-destructive">{error}</p>
       ) : (
@@ -167,10 +192,10 @@ function ExamplesBlock({ detail }: { detail: HanziDetail }) {
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {detail.examples.map((example, index) => (
-          <div key={index} className="border-l-2 pl-3 flex flex-col gap-1">
-            <div className="text-base" lang="zh-Hans">{example.sentence}</div>
-            <div className="text-xs text-muted-foreground">{example.pinyin}</div>
-            <div className="text-sm">{example.translation}</div>
+          <div key={index} className="border-l-2 border-primary/40 pl-3 flex flex-col gap-1 min-w-0">
+            <div className="text-base break-words" lang="zh-Hans">{example.sentence}</div>
+            <div className="text-xs text-muted-foreground break-words">{example.pinyin}</div>
+            <div className="text-sm break-words">{example.translation}</div>
           </div>
         ))}
       </CardContent>
@@ -223,10 +248,10 @@ function UserCardsBlock({ detail }: { detail: HanziDetail }) {
 
 function DetailSkeleton() {
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-4">
+    <div className="max-w-3xl mx-auto w-full flex flex-col gap-4">
       <Card>
-        <CardContent className="pt-6 flex gap-6">
-          <div className="w-[220px] h-[220px] rounded bg-muted animate-pulse" />
+        <CardContent className="pt-6 flex flex-col sm:flex-row gap-6">
+          <div className="aspect-square w-full max-w-[240px] mx-auto sm:mx-0 rounded-lg bg-muted animate-pulse" />
           <div className="flex-1 flex flex-col gap-2">
             <div className="h-8 w-32 rounded bg-muted animate-pulse" />
             <div className="h-4 w-40 rounded bg-muted animate-pulse" />

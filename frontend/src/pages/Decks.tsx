@@ -111,16 +111,18 @@ export function DecksPage() {
   const myDecks = data.decks.filter((d) => d.owned);
 
   return (
-    <div className="flex flex-col gap-6 max-w-3xl mx-auto">
-      <div className="flex items-end justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-semibold">Decks</h1>
-          <p className="text-sm text-muted-foreground">
+    <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Decks</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Subscribe to add every card in a deck to your study queue
             (Recognition + Production), or build your own.
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>New deck</Button>
+        <Button onClick={() => setCreateOpen(true)} className="w-full sm:w-auto shrink-0">
+          + New deck
+        </Button>
       </div>
 
       <section className="flex flex-col gap-3">
@@ -187,25 +189,25 @@ function DeckCard({
   onUnsubscribe: () => void;
 }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center justify-between gap-2">
-          <span>{deck.name}</span>
+    <Card className="flex flex-col hover:shadow-card-hover">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base sm:text-lg flex items-start justify-between gap-2">
+          <span className="min-w-0 break-words">{deck.name}</span>
           {deck.subscribed ? (
-            <span className="text-xs uppercase tracking-wide text-emerald-600">
+            <span className="shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
               Subscribed
             </span>
           ) : null}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="line-clamp-2">
           {deck.description ?? `${deck.hanziCount} hanzi`}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex items-center justify-between gap-2">
+      <CardContent className="mt-auto flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">
           {deck.hanziCount} hanzi
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 justify-end">
           {deck.owned ? (
             <Button asChild size="sm" variant="outline">
               <Link to={`/decks/${deck.id}`}>Edit</Link>
@@ -329,7 +331,7 @@ function CreateDeckDialog({
               value={description}
               maxLength={4000}
               onChange={(e) => setDescription(e.target.value)}
-              className="min-h-[72px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="min-h-[72px] w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:border-ring/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               placeholder="What is this deck for?"
             />
           </label>

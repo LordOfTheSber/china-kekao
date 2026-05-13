@@ -51,20 +51,20 @@ export function Layout() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/40">
-      <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between gap-4">
+    <div className="min-h-dvh flex flex-col bg-gradient-to-b from-background via-background to-muted/30">
+      <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/65">
+        <div className="container flex h-14 items-center justify-between gap-3">
           <NavLink
             to="/"
-            className="flex items-center gap-2 font-semibold tracking-tight"
+            className="flex items-center gap-2 font-semibold tracking-tight min-w-0"
           >
             <span
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-base font-serif"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-base font-serif shadow-sm"
               aria-hidden
             >
               科
             </span>
-            <span>china-kekao</span>
+            <span className="hidden xs:inline truncate">china-kekao</span>
           </NavLink>
           <nav className="hidden md:flex items-center gap-1">
             {NAV_ITEMS.map((item) => (
@@ -75,7 +75,7 @@ export function Layout() {
                 className={({ isActive }) =>
                   cn(
                     "px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
-                    isActive && "bg-accent text-foreground",
+                    isActive && "bg-accent text-accent-foreground",
                   )
                 }
               >
@@ -83,10 +83,10 @@ export function Layout() {
               </NavLink>
             ))}
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             {user ? (
               <>
-                <span className="text-sm text-muted-foreground hidden lg:inline">
+                <span className="text-sm text-muted-foreground hidden lg:inline max-w-[18ch] truncate">
                   {user.email}
                 </span>
                 <Button variant="outline" size="sm" onClick={handleLogout}>
@@ -100,8 +100,8 @@ export function Layout() {
             )}
           </div>
         </div>
-        <nav className="md:hidden border-t">
-          <div className="container flex items-center gap-1 overflow-x-auto py-2 -mx-1 px-1 no-scrollbar">
+        <nav className="md:hidden border-t bg-background/60">
+          <div className="container flex items-center gap-1.5 overflow-x-auto py-2 no-scrollbar">
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
@@ -111,8 +111,8 @@ export function Layout() {
                   cn(
                     "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
                     isActive
-                      ? "bg-foreground text-background border-foreground"
-                      : "border-border text-muted-foreground hover:text-foreground",
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "border-border text-muted-foreground hover:text-foreground hover:bg-accent/50",
                   )
                 }
               >
@@ -122,7 +122,7 @@ export function Layout() {
           </div>
         </nav>
       </header>
-      <main className="flex-1 container py-6">
+      <main className="flex-1 container py-6 min-w-0 safe-pad-b">
         <Outlet />
       </main>
     </div>

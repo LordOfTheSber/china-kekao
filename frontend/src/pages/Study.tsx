@@ -237,25 +237,27 @@ function SessionRunner({
   const progress = Math.round(((index) / total) * 100);
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl mx-auto">
+    <div className="flex flex-col gap-6 max-w-2xl mx-auto w-full min-w-0">
       <div>
-        <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 text-sm text-muted-foreground mb-1">
           <span>
             Card {index + 1} of {total}
             {practicing ? " · Practice" : ""}
           </span>
-          <span className="uppercase tracking-wide">{card.mode}</span>
+          <span className="text-xs uppercase tracking-wide rounded-full bg-muted px-2 py-0.5">
+            {card.mode}
+          </span>
         </div>
         <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
           <div
-            className="h-full bg-primary transition-all"
+            className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
       <Card>
-        <CardContent className="pt-8 pb-6 flex flex-col items-center gap-6">
+        <CardContent className="pt-8 pb-6 flex flex-col items-center gap-6 min-w-0">
           {card.mode === "RECOGNITION" ? (
             <RecognitionCard
               card={card}
@@ -298,7 +300,7 @@ function SessionRunner({
         />
       ) : (
         <div className="flex justify-center">
-          <Button size="lg" onClick={handleCheck}>
+          <Button size="lg" className="w-full sm:w-auto" onClick={handleCheck}>
             Check (Enter)
           </Button>
         </div>
@@ -596,7 +598,7 @@ function RatingButtons({
           onClick={() => onPick(r.rating)}
           disabled={disabled}
           className={cn(
-            "h-14 text-base font-semibold",
+            "h-14 text-sm sm:text-base font-semibold shadow-card",
             r.className,
             suggested === r.rating && "ring-2 ring-offset-2 ring-foreground",
           )}
@@ -696,7 +698,7 @@ function SessionSummary({ total, stats }: { total: number; stats: SessionStat })
           <SummaryStat label="Easy" value={stats.easy} className="text-sky-600" />
         </div>
         <p className="text-sm">Accuracy this session: <strong>{accuracy}%</strong></p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button asChild>
             <Link to="/">Back to dashboard</Link>
           </Button>

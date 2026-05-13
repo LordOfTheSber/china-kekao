@@ -40,23 +40,28 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-xl border bg-card p-6 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-background to-background p-6 sm:p-8 shadow-card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-balance">
             Welcome back
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Your study progress at a glance.
           </p>
         </div>
-        <Button asChild size="lg" disabled={isLoading} className="self-start sm:self-auto">
+        <Button
+          asChild
+          size="lg"
+          disabled={isLoading}
+          className="w-full sm:w-auto shrink-0"
+        >
           <Link to="/study">Start studying →</Link>
         </Button>
       </div>
 
       {isError ? (
         <Card>
-          <CardContent className="pt-6 flex items-center justify-between">
+          <CardContent className="pt-6 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-destructive">
               Could not load your stats.
             </p>
@@ -67,7 +72,7 @@ export function DashboardPage() {
         </Card>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {STATS.map((stat) => (
           <StatCard
             key={stat.key}
@@ -94,9 +99,9 @@ function StatCard({
   loading: boolean;
 }) {
   return (
-    <Card>
+    <Card className="hover:shadow-card-hover">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+        <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {label}
         </CardTitle>
       </CardHeader>
@@ -110,7 +115,9 @@ function StatCard({
             aria-hidden
           />
         ) : (
-          <p className="text-3xl font-semibold tabular-nums">{value}</p>
+          <p className="text-2xl sm:text-3xl font-semibold tabular-nums truncate">
+            {value}
+          </p>
         )}
         {hint ? (
           <p className="text-xs text-muted-foreground mt-2">{hint}</p>
