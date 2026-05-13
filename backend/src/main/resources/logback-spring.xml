@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+  <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="china-kekao-backend"/>
+
+  <appender name="TEXT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+      <charset>utf-8</charset>
+    </encoder>
+  </appender>
+
+  <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <includeContext>false</includeContext>
+      <includeMdc>true</includeMdc>
+      <customFields>{"service":"${appName}"}</customFields>
+      <fieldNames>
+        <timestamp>@timestamp</timestamp>
+        <message>message</message>
+        <thread>thread</thread>
+        <logger>logger</logger>
+        <level>level</level>
+      </fieldNames>
+    </encoder>
+  </appender>
+
+  <!--
+    Profile-driven appender choice. Switch logging in prod by selecting one
+    of two stacked profiles in SPRING_PROFILES_ACTIVE:
+        prod,json   → JSON to stdout (recommended on the VPS)
+        prod        → human-readable text (handy for ad-hoc debugging)
+  -->
+  <springProfile name="json">
+    <root level="INFO">
+      <appender-ref ref="JSON"/>
+    </root>
+  </springProfile>
+
+  <springProfile name="!json">
+    <root level="INFO">
+      <appender-ref ref="TEXT"/>
+    </root>
+  </springProfile>
+</configuration>

@@ -56,9 +56,12 @@ public class StudyController {
 
     @GetMapping("/session")
     @Transactional(readOnly = true)
-    public List<StudyCardView> session(@AuthenticationPrincipal Jwt jwt) {
+    public List<StudyCardView> session(@AuthenticationPrincipal Jwt jwt,
+                                       @RequestParam(value = "deckId", required = false) Long deckId) {
         long userId = userId(jwt);
-        List<UserCardEntity> queue = sessionService.getTodayQueue(userId);
+        List<UserCardEntity> queue = deckId == null
+                ? sessionService.getTodayQueue(userId)
+                : sessionService.getDeckPracticeQueue(userId, deckId);
         Map<Long, List<String>> meaningsByHanzi = loadEnglishMeanings(queue);
         return queue.stream().map(card -> toView(card, meaningsByHanzi)).toList();
     }

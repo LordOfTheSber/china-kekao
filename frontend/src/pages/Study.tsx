@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { fetchDistractors, fetchStudySession, postReview } from "@/api/study";
@@ -48,9 +48,12 @@ const RATINGS: Array<{
 
 export function StudyPage() {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const rawDeckId = searchParams.get("deckId");
+  const deckId = rawDeckId != null && /^\d+$/.test(rawDeckId) ? Number(rawDeckId) : undefined;
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["study-session"],
-    queryFn: fetchStudySession,
+    queryKey: ["study-session", deckId ?? null],
+    queryFn: () => fetchStudySession(deckId),
     refetchOnMount: "always",
     staleTime: 0,
   });
@@ -69,12 +72,13 @@ export function StudyPage() {
     );
   }
   if (!data || data.length === 0) {
-    return <EmptyQueue />;
+    return <EmptyQueue practicing={deckId != null} />;
   }
 
   return (
     <SessionRunner
       cards={data}
+      practicing={deckId != null}
       onFinished={() => {
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       }}
@@ -84,9 +88,11 @@ export function StudyPage() {
 
 function SessionRunner({
   cards,
+  practicing,
   onFinished,
 }: {
   cards: StudyCard[];
+  practicing: boolean;
   onFinished: () => void;
 }) {
   const productionMode = usePreferencesStore((s) => s.productionMode);
@@ -234,7 +240,10 @@ function SessionRunner({
     <div className="flex flex-col gap-6 max-w-2xl mx-auto">
       <div>
         <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
-          <span>Card {index + 1} of {total}</span>
+          <span>
+            Card {index + 1} of {total}
+            {practicing ? " · Practice" : ""}
+          </span>
           <span className="uppercase tracking-wide">{card.mode}</span>
         </div>
         <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
@@ -648,15 +657,17 @@ function SessionSkeleton() {
   );
 }
 
-function EmptyQueue() {
+function EmptyQueue({ practicing }: { practicing: boolean }) {
   return (
     <Card className="max-w-xl mx-auto">
       <CardHeader>
-        <CardTitle>All caught up</CardTitle>
+        <CardTitle>{practicing ? "Nothing to practice" : "All caught up"}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <p className="text-sm text-muted-foreground">
-          Nothing is due right now. Subscribe to a deck or come back later.
+          {practicing
+            ? "This deck has no cards yet. Add hanzi to it or subscribe first."
+            : "Nothing is due right now. Pick a deck to practice on demand, or come back later."}
         </p>
         <Button asChild variant="outline">
           <Link to="/decks">Browse decks</Link>

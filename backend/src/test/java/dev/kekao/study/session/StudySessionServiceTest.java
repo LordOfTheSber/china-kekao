@@ -1,5 +1,9 @@
 package dev.kekao.study.session;
 
+import dev.kekao.deck.DeckEntity;
+import dev.kekao.deck.DeckRepository;
+import dev.kekao.deck.UserDeckId;
+import dev.kekao.deck.UserDeckRepository;
 import dev.kekao.hanzi.HanziEntity;
 import dev.kekao.study.CardState;
 import dev.kekao.study.StudyMode;
@@ -42,6 +46,8 @@ class StudySessionServiceTest {
 
     @Mock private UserRepository users;
     @Mock private UserCardRepository userCards;
+    @Mock private DeckRepository decks;
+    @Mock private UserDeckRepository userDecks;
 
     private StudySessionService service;
 
@@ -50,6 +56,8 @@ class StudySessionServiceTest {
         service = new StudySessionService(
                 users,
                 userCards,
+                decks,
+                userDecks,
                 Clock.fixed(FIXED_NOW, ZoneOffset.UTC),
                 new Random(0)
         );
@@ -163,6 +171,46 @@ class StudySessionServiceTest {
         assertThat(result).hasSize(3);
         assertThat(result.get(0).getHanzi().getId()).isNotEqualTo(result.get(1).getHanzi().getId());
         assertThat(result.get(1).getHanzi().getId()).isNotEqualTo(result.get(2).getHanzi().getId());
+    }
+
+    @Test
+    void practiceQueueReturnsAllDeckCardsIgnoringDueDate() {
+        givenUser(new HashMap<>());
+        DeckEntity deck = DeckEntity.builder().id(7L).system(true).build();
+        when(decks.findById(7L)).thenReturn(Optional.of(deck));
+        UserCardEntity overdue = card(1L, 100L, StudyMode.RECOGNITION, CardState.REVIEW);
+        UserCardEntity future = card(2L, 200L, StudyMode.RECOGNITION, CardState.REVIEW);
+        when(userCards.findAllCardsForUserAndDeck(eq(USER_ID), eq(7L), any(Pageable.class)))
+                .thenReturn(new ArrayList<>(List.of(overdue, future)));
+
+        List<UserCardEntity> queue = service.getDeckPracticeQueue(USER_ID, 7L);
+
+        assertThat(queue).extracting(UserCardEntity::getId).containsExactlyInAnyOrder(1L, 2L);
+    }
+
+    @Test
+    void practiceQueueRequiresSubscriptionForUserDecks() {
+        givenUser(new HashMap<>());
+        UserEntity owner = UserEntity.builder().id(999L).email("o@x").passwordHash("h").build();
+        DeckEntity privateDeck = DeckEntity.builder().id(8L).system(false).owner(owner).build();
+        when(decks.findById(8L)).thenReturn(Optional.of(privateDeck));
+        when(userDecks.existsById(new UserDeckId(USER_ID, 8L))).thenReturn(false);
+
+        assertThatThrownBy(() -> service.getDeckPracticeQueue(USER_ID, 8L))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    void practiceQueueAllowsSubscribedNonSystemDeck() {
+        givenUser(new HashMap<>());
+        UserEntity owner = UserEntity.builder().id(999L).email("o@x").passwordHash("h").build();
+        DeckEntity privateDeck = DeckEntity.builder().id(8L).system(false).owner(owner).build();
+        when(decks.findById(8L)).thenReturn(Optional.of(privateDeck));
+        when(userDecks.existsById(new UserDeckId(USER_ID, 8L))).thenReturn(true);
+        when(userCards.findAllCardsForUserAndDeck(eq(USER_ID), eq(8L), any(Pageable.class)))
+                .thenReturn(List.of());
+
+        assertThat(service.getDeckPracticeQueue(USER_ID, 8L)).isEmpty();
     }
 
     @Test
