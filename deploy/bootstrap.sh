@@ -116,7 +116,7 @@ if [ ! -f "$ENV_FILE" ]; then
     sed -i \
         -e "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$(openssl rand -hex 24)|" \
         -e "s|^KEKAO_PUBLIC_HOST=.*|KEKAO_PUBLIC_HOST=${KEKAO_PUBLIC_HOST}|" \
-        -e "s|^SPRING_PROFILES_ACTIVE=.*|SPRING_PROFILES_ACTIVE=prod,json|" \
+        -e "s|^SPRING_PROFILES_ACTIVE=.*|SPRING_PROFILES_ACTIVE=prod|" \
         "$ENV_FILE"
 fi
 
