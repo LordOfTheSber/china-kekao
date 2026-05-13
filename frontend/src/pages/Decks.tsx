@@ -211,6 +211,11 @@ function DeckCard({
               <Link to={`/decks/${deck.id}`}>Edit</Link>
             </Button>
           ) : null}
+          {deck.subscribed && deck.hanziCount > 0 ? (
+            <Button asChild size="sm" variant="secondary">
+              <Link to={`/study?deckId=${deck.id}`}>Practice</Link>
+            </Button>
+          ) : null}
           {deck.subscribed ? (
             <Button
               size="sm"

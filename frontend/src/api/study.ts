@@ -1,8 +1,10 @@
 import { api } from "@/api/client";
 import type { ReviewRequest, ReviewResponse, StudyCard } from "@/api/types";
 
-export async function fetchStudySession(): Promise<StudyCard[]> {
-  const response = await api.get<StudyCard[]>("/study/session");
+export async function fetchStudySession(deckId?: number): Promise<StudyCard[]> {
+  const response = await api.get<StudyCard[]>("/study/session", {
+    params: deckId != null ? { deckId } : undefined,
+  });
   return response.data;
 }
 

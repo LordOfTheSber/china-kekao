@@ -1,0 +1,34 @@
+# Add Caddy in front of the production stack. Use together with the prod
+# overlay, e.g.:
+#   docker compose \
+#     -f docker-compose.yml \
+#     -f docker-compose.prod.yml \
+#     -f deploy/docker-compose.caddy.yml up -d
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: kekao-caddy
+    depends_on:
+      frontend:
+        condition: service_healthy
+    environment:
+      KEKAO_PUBLIC_HOST: ${KEKAO_PUBLIC_HOST}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@${KEKAO_PUBLIC_HOST}}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: always
+
+  # Disable the frontend's host port mapping; Caddy reaches it on the
+  # internal network only.
+  frontend:
+    ports: !reset []
+
+volumes:
+  caddy-data:
+  caddy-config:

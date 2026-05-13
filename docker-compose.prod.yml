@@ -1,0 +1,53 @@
+# Production overlay. Run alongside the base file:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Differences from dev:
+#   - SPRING_PROFILES_ACTIVE=prod, JSON logs, strict JWT keys required.
+#   - Frontend served by nginx (target: prod), exposed on 8080 by default.
+#   - Postgres has no exposed host port; only internal access.
+#   - Caddy in front terminates TLS (see deploy/Caddyfile).
+
+services:
+  postgres:
+    ports: !reset []
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    restart: always
+
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      SERVER_PORT: 8080
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:?JWT_PRIVATE_KEY must be set in prod}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY must be set in prod}
+      JWT_ISSUER: ${JWT_ISSUER:-china-kekao}
+      LOG_LEVEL_APP: ${LOG_LEVEL_APP:-INFO}
+    ports: !reset []
+    expose:
+      - "8080"
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: prod
+    profiles: !reset []
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment: !reset null
+    volumes: !reset []
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8

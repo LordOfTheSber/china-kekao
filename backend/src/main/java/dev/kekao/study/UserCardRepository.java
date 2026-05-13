@@ -61,6 +61,26 @@ public interface UserCardRepository extends JpaRepository<UserCardEntity, Long> 
                                                  @Param("state") CardState state,
                                                  Pageable pageable);
 
+    /**
+     * All cards a user has for a given deck, regardless of state or due date. Powers the
+     * "practice this deck" flow so users can replay a finished pack without waiting for the
+     * FSRS schedule to bring cards back.
+     */
+    @EntityGraph(attributePaths = {"hanzi"})
+    @Query("""
+            SELECT uc FROM UserCardEntity uc
+            WHERE uc.user.id = :userId
+              AND EXISTS (
+                  SELECT 1 FROM DeckHanziEntity dh
+                  WHERE dh.deck.id = :deckId
+                    AND dh.hanzi.id = uc.hanzi.id
+              )
+            ORDER BY uc.dueDate ASC, uc.id ASC
+            """)
+    List<UserCardEntity> findAllCardsForUserAndDeck(@Param("userId") Long userId,
+                                                    @Param("deckId") Long deckId,
+                                                    Pageable pageable);
+
     @Query("""
             SELECT uc.hanzi.id, uc.mode FROM UserCardEntity uc
             WHERE uc.user.id = :userId AND uc.hanzi.id IN :hanziIds

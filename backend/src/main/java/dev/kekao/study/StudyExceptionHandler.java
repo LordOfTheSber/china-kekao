@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice(assignableTypes = StudyController.class)
@@ -40,6 +41,12 @@ public class StudyExceptionHandler {
     public ResponseEntity<Map<String, Object>> forbidden(StudyController.ReviewForbiddenException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(Map.of("error", "user_card_forbidden"));
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<Map<String, Object>> missing(NoSuchElementException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "not_found"));
     }
 
     @ExceptionHandler(StudyController.ReviewModeMismatchException.class)

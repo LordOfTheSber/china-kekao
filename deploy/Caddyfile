@@ -1,0 +1,31 @@
+# Caddy reverse proxy with automatic Let's Encrypt TLS.
+# Replace KEKAO_PUBLIC_HOST and ACME_EMAIL via env or `caddy run --envfile`.
+
+{
+    email {$ACME_EMAIL}
+}
+
+{$KEKAO_PUBLIC_HOST} {
+    encode gzip zstd
+
+    # Static SPA + API are served by the frontend nginx container which
+    # internally proxies /api and /actuator to the backend.
+    reverse_proxy frontend:80 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Sensible defaults: HSTS once HTTPS is confirmed working on prod.
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Tighten CSP after auditing third-party assets (hanzi-writer fonts etc.)
+        # Content-Security-Policy "default-src 'self'; ..."
+    }
+
+    log {
+        output stdout
+        format json
+    }
+}

@@ -1,5 +1,9 @@
 package dev.kekao.study.session;
 
+import dev.kekao.deck.DeckEntity;
+import dev.kekao.deck.DeckRepository;
+import dev.kekao.deck.UserDeckId;
+import dev.kekao.deck.UserDeckRepository;
 import dev.kekao.study.CardState;
 import dev.kekao.study.UserCardEntity;
 import dev.kekao.study.UserCardRepository;
@@ -34,20 +38,33 @@ public class StudySessionService {
     public static final String SETTING_MAX_REVIEWS_PER_DAY = "maxReviewsPerDay";
     public static final int DEFAULT_NEW_PER_DAY = 20;
     public static final int DEFAULT_MAX_REVIEWS_PER_DAY = 200;
+    public static final int PRACTICE_QUEUE_MAX = 500;
 
     private final UserRepository users;
     private final UserCardRepository userCards;
+    private final DeckRepository decks;
+    private final UserDeckRepository userDecks;
     private final Clock clock;
     private final Random random;
 
     @Autowired
-    public StudySessionService(UserRepository users, UserCardRepository userCards) {
-        this(users, userCards, Clock.systemUTC(), new Random());
+    public StudySessionService(UserRepository users,
+                               UserCardRepository userCards,
+                               DeckRepository decks,
+                               UserDeckRepository userDecks) {
+        this(users, userCards, decks, userDecks, Clock.systemUTC(), new Random());
     }
 
-    StudySessionService(UserRepository users, UserCardRepository userCards, Clock clock, Random random) {
+    StudySessionService(UserRepository users,
+                        UserCardRepository userCards,
+                        DeckRepository decks,
+                        UserDeckRepository userDecks,
+                        Clock clock,
+                        Random random) {
         this.users = users;
         this.userCards = userCards;
+        this.decks = decks;
+        this.userDecks = userDecks;
         this.clock = clock;
         this.random = random;
     }
@@ -75,6 +92,29 @@ public class StudySessionService {
         combined.addAll(news);
         Collections.shuffle(combined, random);
         return separateSameHanzi(combined);
+    }
+
+    /**
+     * On-demand queue for a single deck — returns every card the user has from that deck,
+     * ignoring FSRS due dates and the daily new/review caps. Lets users replay a pack after
+     * they've finished today's scheduled queue.
+     */
+    @Transactional(readOnly = true)
+    public List<UserCardEntity> getDeckPracticeQueue(Long userId, Long deckId) {
+        users.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
+        DeckEntity deck = decks.findById(deckId)
+                .orElseThrow(() -> new NoSuchElementException("Deck not found: " + deckId));
+        if (!deck.isSystem()
+                && (deck.getOwner() == null || !userId.equals(deck.getOwner().getId()))
+                && !userDecks.existsById(new UserDeckId(userId, deckId))) {
+            throw new NoSuchElementException("Deck not found: " + deckId);
+        }
+
+        List<UserCardEntity> cards = new ArrayList<>(userCards.findAllCardsForUserAndDeck(
+                userId, deckId, PageRequest.of(0, PRACTICE_QUEUE_MAX)));
+        Collections.shuffle(cards, random);
+        return separateSameHanzi(cards);
     }
 
     /**
