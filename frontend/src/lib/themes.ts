@@ -8,6 +8,7 @@ export type ThemeId =
   | "hacker"
   | "arcade"
   | "anime"
+  | "anime-sky"
   | "custom";
 
 export type ThemeMode = "light" | "dark";
@@ -110,12 +111,21 @@ export const THEMES: Record<Exclude<ThemeId, "custom">, ThemePreset> = {
   },
   anime: {
     id: "anime",
-    label: "アニメ Anime",
-    description: "Night city + cyan-magenta glow, true opening vibes.",
+    label: "ネオン Anime Neo",
+    description: "Cyber anime night city + magenta/cyan glow.",
     mode: "dark",
     swatchPaper: "#120A2F",
     swatchInk: "#F3F3FF",
     swatchSeal: "#FF4FB3",
+  },
+  "anime-sky": {
+    id: "anime-sky",
+    label: "青春 Anime Sky",
+    description: "Classic anime sky, soft gradients, calm slice-of-life mood.",
+    mode: "light",
+    swatchPaper: "#DCEEFF",
+    swatchInk: "#2D3F68",
+    swatchSeal: "#FF729C",
   },
 };
 
@@ -129,6 +139,7 @@ export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
   "hacker",
   "arcade",
   "anime",
+  "anime-sky",
 ];
 
 export const DEFAULT_CUSTOM_TOKENS: ThemeTokens = {
