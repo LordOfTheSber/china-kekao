@@ -48,15 +48,15 @@ export function SearchPage() {
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.size)) : 1;
 
   return (
-    <div className="flex flex-col gap-4 max-w-3xl mx-auto">
+    <div className="flex flex-col gap-4 max-w-3xl mx-auto w-full">
       <div>
-        <h1 className="text-2xl font-semibold">Search</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Search</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Find published characters by hanzi, pinyin or English meaning.
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="flex flex-col gap-3">
         <Input
           autoFocus
           value={query}
@@ -67,7 +67,7 @@ export function SearchPage() {
           autoCorrect="off"
           spellCheck={false}
         />
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {HSK_OPTIONS.map((opt) => (
             <Button
               key={opt.label}
@@ -128,15 +128,15 @@ function SearchResultRow({ item }: { item: HanziSummary }) {
     <li>
       <Link
         to={`/hanzi/${item.id}`}
-        className="block rounded-md border p-3 hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
+        className="group block rounded-lg border bg-card p-3 shadow-card transition-all hover:bg-accent/40 hover:shadow-card-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <div className="flex items-center gap-4">
-          <div className="text-4xl font-serif w-14 text-center" lang="zh-Hans">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="text-4xl font-serif w-12 sm:w-14 shrink-0 text-center" lang="zh-Hans">
             {item.character}
           </div>
           <div className="flex flex-col flex-1 min-w-0">
             <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="font-medium">{item.pinyin}</span>
+              <span className="font-medium truncate">{item.pinyin}</span>
               {item.hskLevel != null ? (
                 <span className="text-xs uppercase tracking-wide text-muted-foreground">
                   HSK {item.hskLevel}
@@ -173,7 +173,7 @@ function PaginationBar({
 }) {
   const range = useMemo(() => `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, total)} of ${total}`, [page, total]);
   return (
-    <div className="flex items-center justify-between text-sm text-muted-foreground">
+    <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
       <span>{range}</span>
       <div className="flex gap-2">
         <Button

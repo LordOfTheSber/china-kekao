@@ -5,10 +5,27 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "1rem",
+      padding: {
+        DEFAULT: "1rem",
+        sm: "1.25rem",
+        lg: "2rem",
+      },
       screens: { "2xl": "1280px" },
     },
+    screens: {
+      xs: "420px",
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1536px",
+    },
     extend: {
+      boxShadow: {
+        card: "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.06)",
+        "card-hover":
+          "0 2px 4px rgba(15, 23, 42, 0.06), 0 10px 24px -4px rgba(15, 23, 42, 0.10)",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

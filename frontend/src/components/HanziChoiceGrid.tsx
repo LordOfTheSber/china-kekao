@@ -55,9 +55,9 @@ export function HanziChoiceGrid({
             disabled={picked !== null}
             onClick={() => handlePick(choice)}
             className={cn(
-              "h-20 text-3xl font-serif",
-              reveal && isCorrect && "bg-emerald-100 border-emerald-500 text-emerald-900",
-              reveal && isPicked && !isCorrect && "bg-rose-100 border-rose-500 text-rose-900",
+              "aspect-square h-auto w-full text-3xl sm:text-4xl font-serif min-w-0 transition-all",
+              reveal && isCorrect && "bg-emerald-100 border-emerald-500 text-emerald-900 dark:bg-emerald-500/15 dark:text-emerald-300",
+              reveal && isPicked && !isCorrect && "bg-rose-100 border-rose-500 text-rose-900 dark:bg-rose-500/15 dark:text-rose-300",
             )}
             lang="zh-Hans"
           >

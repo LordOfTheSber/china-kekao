@@ -70,7 +70,7 @@ export function RegisterPage() {
   });
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="max-w-md mx-auto w-full">
       <Card>
         <CardHeader>
           <CardTitle>Create an account</CardTitle>
@@ -103,7 +103,7 @@ export function RegisterPage() {
                 <p className="text-xs text-destructive">{errors.confirm.message}</p>
               ) : null}
             </div>
-            <Button type="submit" disabled={mutation.isPending}>
+            <Button type="submit" size="lg" className="w-full" disabled={mutation.isPending}>
               {mutation.isPending ? "Creating account…" : "Create account"}
             </Button>
             <p className="text-sm text-muted-foreground">

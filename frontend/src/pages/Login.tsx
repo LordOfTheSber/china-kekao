@@ -61,7 +61,7 @@ export function LoginPage() {
   });
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="max-w-md mx-auto w-full">
       <Card>
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
@@ -87,7 +87,7 @@ export function LoginPage() {
                 <p className="text-xs text-destructive">{errors.password.message}</p>
               ) : null}
             </div>
-            <Button type="submit" disabled={mutation.isPending}>
+            <Button type="submit" size="lg" className="w-full" disabled={mutation.isPending}>
               {mutation.isPending ? "Signing in…" : "Sign in"}
             </Button>
             <p className="text-sm text-muted-foreground">

@@ -168,7 +168,7 @@ export function HanziDrawingPad({
   }
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4 w-full min-w-0">
       {loadError ? (
         <div className="text-sm text-destructive">
           Could not load stroke data for &ldquo;{character}&rdquo;.
@@ -176,14 +176,14 @@ export function HanziDrawingPad({
       ) : null}
       <div
         ref={containerRef}
-        className="rounded-md border bg-background"
+        className="rounded-lg border bg-background shadow-card max-w-full"
         style={{
           width: size,
           height: size,
           touchAction: "none",
         }}
       />
-      <div className="flex gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
         <Button variant="outline" size="sm" onClick={handleSkip}>
           Skip
         </Button>

@@ -76,12 +76,12 @@ export function DeckEditPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between gap-2">
+    <div className="flex flex-col gap-4 max-w-3xl mx-auto w-full">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Button asChild variant="ghost" size="sm">
           <Link to="/decks">← All decks</Link>
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 justify-end">
           <SubscribeToggleButton deck={data} />
           {data.owned ? (
             <DeleteDeckButton
@@ -100,11 +100,11 @@ export function DeckEditPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between gap-2">
-            <span>Hanzi ({data.entries.length})</span>
+          <CardTitle className="flex flex-wrap items-center justify-between gap-2">
+            <span className="min-w-0 break-words">Hanzi ({data.entries.length})</span>
             {data.owned ? (
               <Button size="sm" onClick={() => setAddOpen(true)}>
-                Add hanzi
+                + Add hanzi
               </Button>
             ) : null}
           </CardTitle>
@@ -129,18 +129,19 @@ export function DeckEditPage() {
                 >
                   <Link
                     to={`/hanzi/${entry.hanziId}`}
-                    className="text-3xl font-semibold hover:underline"
+                    className="shrink-0 text-3xl font-semibold hover:underline"
+                    lang="zh-Hans"
                   >
                     {entry.character}
                   </Link>
-                  <div className="flex flex-1 flex-col">
-                    <span className="text-sm text-muted-foreground">
+                  <div className="flex flex-1 flex-col min-w-0">
+                    <span className="text-sm text-muted-foreground truncate">
                       {entry.pinyin}
                       {entry.hskLevel != null
                         ? ` · HSK ${entry.hskLevel}`
                         : ""}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground truncate">
                       {entry.meaningsEn.slice(0, 3).join(", ")}
                     </span>
                   </div>
@@ -206,8 +207,8 @@ function DeckMetaCard({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between gap-2">
-            <span>{deck.name}</span>
+          <CardTitle className="flex flex-wrap items-center justify-between gap-2">
+            <span className="min-w-0 break-words">{deck.name}</span>
             {editable ? (
               <Button
                 variant="outline"
@@ -256,7 +257,7 @@ function DeckMetaCard({
               value={description}
               maxLength={4000}
               onChange={(e) => setDescription(e.target.value)}
-              className="min-h-[72px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="min-h-[72px] w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:border-ring/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
           </label>
           <div className="flex justify-end gap-2">
@@ -559,13 +560,13 @@ function AddHanziDialog({
                       key={h.id}
                       className="flex items-center gap-3 px-3 py-2"
                     >
-                      <span className="text-2xl">{h.character}</span>
-                      <div className="flex flex-1 flex-col">
-                        <span className="text-sm">
+                      <span className="text-2xl shrink-0" lang="zh-Hans">{h.character}</span>
+                      <div className="flex flex-1 flex-col min-w-0">
+                        <span className="text-sm truncate">
                           {h.pinyin}
                           {h.hskLevel != null ? ` · HSK ${h.hskLevel}` : ""}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground truncate">
                           {h.meaningsEn.slice(0, 3).join(", ")}
                         </span>
                       </div>

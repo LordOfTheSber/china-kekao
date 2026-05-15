@@ -151,10 +151,10 @@ function SettingsForm({
   }
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col gap-6">
+    <div className="max-w-2xl mx-auto w-full flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Settings</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Settings</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Saved on the server and synced across your devices.
         </p>
       </div>
@@ -301,8 +301,13 @@ function SettingsForm({
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button size="lg" disabled={!dirty || saving} onClick={handleSave}>
+      <div className="sticky bottom-2 z-10 flex justify-end">
+        <Button
+          size="lg"
+          disabled={!dirty || saving}
+          onClick={handleSave}
+          className="w-full sm:w-auto shadow-card-hover"
+        >
           {saving ? "Saving…" : "Save changes"}
         </Button>
       </div>
@@ -397,8 +402,8 @@ function OptionButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "h-auto flex flex-col items-start gap-1 p-4 text-left whitespace-normal",
-        selected && "ring-2 ring-foreground border-foreground",
+        "h-auto flex flex-col items-start gap-1 p-4 text-left whitespace-normal w-full min-w-0",
+        selected && "ring-2 ring-primary border-primary bg-primary/5",
       )}
     >
       <span className="text-sm font-semibold">{label}</span>

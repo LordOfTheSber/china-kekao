@@ -47,7 +47,7 @@ function ToastItem({ toast: t }: { toast: Toast }) {
     <div
       role="status"
       className={cn(
-        "pointer-events-auto rounded-md border bg-background p-4 shadow-md min-w-[280px]",
+        "pointer-events-auto rounded-lg border bg-card p-4 shadow-card-hover w-full sm:min-w-[280px] sm:w-auto sm:max-w-sm animate-in fade-in-0 slide-in-from-top-2",
         t.variant === "destructive" && "border-destructive/60 bg-destructive text-destructive-foreground",
         t.variant === "success" && "border-emerald-500/60",
       )}
@@ -64,7 +64,7 @@ function ToastItem({ toast: t }: { toast: Toast }) {
 export function Toaster() {
   const toasts = useToastStore((s) => s.toasts);
   return (
-    <div className="pointer-events-none fixed top-4 right-4 z-[100] flex flex-col gap-2">
+    <div className="pointer-events-none fixed inset-x-3 top-3 sm:inset-auto sm:top-4 sm:right-4 z-[100] flex flex-col gap-2 items-stretch sm:items-end">
       {toasts.map((t) => (
         <ToastItem key={t.id} toast={t} />
       ))}
