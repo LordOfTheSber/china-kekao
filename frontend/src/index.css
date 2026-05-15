@@ -157,6 +157,34 @@
     --font-display: "Nunito", "Noto Serif SC", serif;
   }
 
+  [data-theme="sakura"] {
+    --paper: 340 60% 96%;
+    --paper-elevated: 340 70% 98%;
+    --ink: 260 35% 22%;
+    --ink-soft: 260 18% 48%;
+    --seal: 330 85% 56%;
+    --seal-foreground: 340 70% 98%;
+    --brush: 260 35% 28%;
+    --watermark: 330 85% 56%;
+    --success: 160 55% 45%;
+    --success-foreground: 340 70% 98%;
+    --warning: 38 95% 60%;
+    --warning-foreground: 260 35% 22%;
+    --secondary: 340 45% 90%;
+    --secondary-foreground: 260 35% 22%;
+    --muted: 340 35% 92%;
+    --muted-foreground: 260 18% 48%;
+    --accent: 200 75% 80%;
+    --accent-foreground: 260 35% 22%;
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 340 70% 98%;
+    --border: 340 30% 86%;
+    --input: 340 30% 86%;
+    --grain-opacity: 0.05;
+    --brush-radius: 1.5rem;
+    --font-display: "Nunito", "Noto Serif SC", serif;
+  }
+
   [data-theme="hacker"] {
     --paper: 120 20% 5%;
     --paper-elevated: 120 18% 8%;

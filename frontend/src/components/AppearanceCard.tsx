@@ -50,7 +50,7 @@ export function AppearanceCard() {
       <CardContent className="flex flex-col gap-6">
         <div className="flex flex-col gap-3">
           <h3 className="text-sm font-semibold text-ink">Theme</h3>
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 no-scrollbar">
+          <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-3">
             {THEME_ORDER.map((id) => (
               <ThemeTile
                 key={id}
@@ -129,7 +129,7 @@ function ThemeTile({
       type="button"
       onClick={onSelect}
       className={cn(
-        "shrink-0 w-32 rounded-brush border p-3 text-left transition-all",
+        "w-full min-w-0 rounded-brush border p-3 text-left transition-all",
         "hover:-translate-y-0.5 motion-reduce:hover:transform-none",
         selected
           ? "border-seal ring-2 ring-seal shadow-seal"

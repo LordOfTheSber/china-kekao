@@ -4,6 +4,7 @@ export type ThemeId =
   | "teahouse"
   | "neon"
   | "ghibli"
+  | "sakura"
   | "hacker"
   | "custom";
 
@@ -78,6 +79,15 @@ export const THEMES: Record<Exclude<ThemeId, "custom">, ThemePreset> = {
     swatchInk: "#3A4D55",
     swatchSeal: "#E89AA5",
   },
+  sakura: {
+    id: "sakura",
+    label: "樱花 Sakura",
+    description: "Vivid shōjo anime — sakura pink, plum ink, magenta seal.",
+    mode: "light",
+    swatchPaper: "#FCEAF1",
+    swatchInk: "#2A1F3D",
+    swatchSeal: "#E8338A",
+  },
   hacker: {
     id: "hacker",
     label: "终端 Terminal",
@@ -95,6 +105,7 @@ export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
   "teahouse",
   "neon",
   "ghibli",
+  "sakura",
   "hacker",
 ];
 
