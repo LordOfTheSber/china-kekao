@@ -271,6 +271,35 @@
     --font-display: "Nunito", "Noto Serif SC", serif;
   }
 
+
+  [data-theme="anime-kawaii"] {
+    --paper: 328 100% 96%;
+    --paper-elevated: 330 100% 98%;
+    --ink: 258 42% 28%;
+    --ink-soft: 258 26% 46%;
+    --seal: 329 98% 64%;
+    --seal-foreground: 330 100% 98%;
+    --brush: 194 84% 54%;
+    --watermark: 282 70% 68%;
+    --success: 151 54% 44%;
+    --success-foreground: 330 100% 98%;
+    --warning: 38 100% 58%;
+    --warning-foreground: 258 42% 28%;
+    --secondary: 302 55% 90%;
+    --secondary-foreground: 258 42% 28%;
+    --muted: 312 45% 93%;
+    --muted-foreground: 258 26% 46%;
+    --accent: 195 98% 66%;
+    --accent-foreground: 258 42% 28%;
+    --destructive: 351 84% 60%;
+    --destructive-foreground: 330 100% 98%;
+    --border: 311 40% 86%;
+    --input: 311 40% 86%;
+    --grain-opacity: 0.03;
+    --brush-radius: 1.75rem;
+    --font-display: "Nunito", "Noto Serif SC", serif;
+  }
+
   [data-theme="hacker"] {
     --paper: 120 20% 5%;
     --paper-elevated: 120 18% 8%;
@@ -341,12 +370,44 @@
     background-image: url("/anime-theme-bg.svg");
     background-size: cover;
     background-position: center;
-    opacity: 0.45;
+    opacity: 0.26;
     z-index: 1;
   }
 
   [data-theme="anime-sky"] .font-hanzi {
     text-shadow: 0 2px 14px hsl(var(--accent) / 0.4);
+  }
+
+
+  [data-theme="anime-kawaii"] body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("/anime-kawaii-bg.svg");
+    background-size: cover;
+    background-position: center;
+    opacity: 0.44;
+    z-index: 1;
+  }
+
+  [data-theme="anime-kawaii"] body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 12% 18%, hsl(var(--seal) / 0.34) 0 4px, transparent 6px),
+      radial-gradient(circle at 28% 64%, hsl(var(--accent) / 0.36) 0 3px, transparent 5px),
+      radial-gradient(circle at 74% 24%, hsl(var(--seal) / 0.28) 0 5px, transparent 7px),
+      radial-gradient(circle at 88% 72%, hsl(var(--accent) / 0.3) 0 4px, transparent 6px);
+    background-size: 100% 100%;
+    z-index: 3;
+  }
+
+  [data-theme="anime-kawaii"] .font-hanzi {
+    text-shadow: 0 0 15px hsl(var(--seal) / 0.45), 0 0 28px hsl(var(--accent) / 0.3);
+    letter-spacing: 0.02em;
   }
 
   [data-theme="anime"] body::before {

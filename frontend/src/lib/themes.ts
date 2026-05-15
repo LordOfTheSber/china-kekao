@@ -9,6 +9,7 @@ export type ThemeId =
   | "arcade"
   | "anime"
   | "anime-sky"
+  | "anime-kawaii"
   | "custom";
 
 export type ThemeMode = "light" | "dark";
@@ -127,6 +128,15 @@ export const THEMES: Record<Exclude<ThemeId, "custom">, ThemePreset> = {
     swatchInk: "#2D3F68",
     swatchSeal: "#FF729C",
   },
+  "anime-kawaii": {
+    id: "anime-kawaii",
+    label: "カワイイ Kawaii",
+    description: "Max anime energy: pastel glow, sparkles, hearts, and starburst accents.",
+    mode: "light",
+    swatchPaper: "#FFE9F5",
+    swatchInk: "#3B2A68",
+    swatchSeal: "#FF4FA3",
+  },
 };
 
 export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
@@ -140,6 +150,7 @@ export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
   "arcade",
   "anime",
   "anime-sky",
+  "anime-kawaii",
 ];
 
 export const DEFAULT_CUSTOM_TOKENS: ThemeTokens = {
