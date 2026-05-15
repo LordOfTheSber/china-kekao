@@ -6,6 +6,9 @@ import { searchHanzi, type HanziSummary } from "@/api/hanzi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Seal } from "@/components/ui/seal";
+import { BrushDivider } from "@/components/ui/brush-divider";
+import { toast } from "@/components/Toaster";
 import { cn } from "@/lib/utils";
 
 const HSK_OPTIONS: Array<{ value: number | null; label: string }> = [
@@ -34,6 +37,17 @@ export function SearchPage() {
     return () => window.clearTimeout(handle);
   }, [query]);
 
+  // Easter egg: typing the greeting triggers a hello toast.
+  useEffect(() => {
+    const trimmed = query.trim().toLowerCase();
+    if (trimmed === "ni hao" || trimmed === "nihao" || trimmed === "你好") {
+      toast({
+        title: "你好!",
+        description: "Nǐ hǎo — hello back!",
+      });
+    }
+  }, [query]);
+
   useEffect(() => {
     setPage(0);
   }, [hsk]);
@@ -50,8 +64,10 @@ export function SearchPage() {
   return (
     <div className="flex flex-col gap-4 max-w-3xl mx-auto w-full">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Search</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1 className="font-hanzi text-3xl sm:text-4xl font-bold tracking-tight text-ink">
+          字典 <span className="text-2xl sm:text-3xl">Dictionary</span>
+        </h1>
+        <p className="text-sm text-ink-soft mt-1">
           Find published characters by hanzi, pinyin or English meaning.
         </p>
       </div>
@@ -74,6 +90,10 @@ export function SearchPage() {
               size="sm"
               type="button"
               variant={hsk === opt.value ? "default" : "outline"}
+              className={cn(
+                "rounded-full",
+                hsk === opt.value && "shadow-seal",
+              )}
               onClick={() => setHsk(opt.value)}
             >
               {opt.label}
@@ -105,9 +125,14 @@ export function SearchPage() {
         </Card>
       ) : (
         <>
-          <ul className={cn("flex flex-col gap-2", isFetching && "opacity-70 transition-opacity")}>
-            {data.items.map((item) => (
-              <SearchResultRow key={item.id} item={item} />
+          <ul className={cn("flex flex-col", isFetching && "opacity-70 transition-opacity")}>
+            {data.items.map((item, idx) => (
+              <li key={item.id}>
+                <SearchResultRow item={item} />
+                {idx < data.items.length - 1 ? (
+                  <BrushDivider className="my-1 px-6 opacity-60" />
+                ) : null}
+              </li>
             ))}
           </ul>
           <PaginationBar
@@ -125,36 +150,37 @@ export function SearchPage() {
 
 function SearchResultRow({ item }: { item: HanziSummary }) {
   return (
-    <li>
-      <Link
-        to={`/hanzi/${item.id}`}
-        className="group block rounded-lg border bg-card p-3 shadow-card transition-all hover:bg-accent/40 hover:shadow-card-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    <Link
+      to={`/hanzi/${item.id}`}
+      className="group flex items-stretch gap-4 px-2 sm:px-4 py-4 rounded-brush transition-colors hover:bg-accent/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <div
+        className="font-hanzi font-bold text-[3.5rem] sm:text-7xl leading-none w-20 sm:w-28 shrink-0 text-center text-ink"
+        lang="zh-Hans"
       >
-        <div className="flex items-center gap-4 min-w-0">
-          <div className="text-4xl font-serif w-12 sm:w-14 shrink-0 text-center" lang="zh-Hans">
-            {item.character}
-          </div>
-          <div className="flex flex-col flex-1 min-w-0">
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="font-medium truncate">{item.pinyin}</span>
-              {item.hskLevel != null ? (
-                <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                  HSK {item.hskLevel}
-                </span>
-              ) : null}
-              {item.strokeCount != null ? (
-                <span className="text-xs text-muted-foreground">
-                  {item.strokeCount} strokes
-                </span>
-              ) : null}
-            </div>
-            <div className="text-sm text-muted-foreground truncate">
-              {item.meaningsEn.length ? item.meaningsEn.join(", ") : "—"}
-            </div>
-          </div>
+        {item.character}
+      </div>
+      <div className="flex flex-col flex-1 min-w-0 justify-center gap-1">
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <span className="font-hanzi text-lg font-medium text-seal truncate">
+            {item.pinyin}
+          </span>
+          {item.hskLevel != null ? (
+            <Seal size="sm" tilt={false} title={`HSK ${item.hskLevel}`}>
+              {item.hskLevel}
+            </Seal>
+          ) : null}
+          {item.strokeCount != null ? (
+            <span className="text-xs text-ink-soft">
+              {item.strokeCount} strokes
+            </span>
+          ) : null}
         </div>
-      </Link>
-    </li>
+        <div className="text-sm text-ink-soft leading-snug">
+          {item.meaningsEn.length ? item.meaningsEn.join(", ") : "—"}
+        </div>
+      </div>
+    </Link>
   );
 }
 

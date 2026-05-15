@@ -13,6 +13,7 @@ import { HanziDetailPage } from "@/pages/HanziDetail";
 import { SearchPage } from "@/pages/Search";
 import { StatsPage } from "@/pages/Stats";
 import { SettingsPage } from "@/pages/Settings";
+import { AchievementsPage } from "@/pages/Achievements";
 import { NotFoundPage } from "@/pages/NotFound";
 
 export function App() {
@@ -82,6 +83,14 @@ export function App() {
           element={
             <ProtectedRoute>
               <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/achievements"
+          element={
+            <ProtectedRoute>
+              <AchievementsPage />
             </ProtectedRoute>
           }
         />

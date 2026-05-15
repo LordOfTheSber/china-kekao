@@ -1,5 +1,6 @@
 package dev.kekao.study;
 
+import dev.kekao.achievement.AchievementDtos.AchievementView;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
@@ -52,6 +53,7 @@ public final class StudyDtos {
             double difficulty,
             Instant nextDue,
             int scheduledDays,
-            int elapsedDays
+            int elapsedDays,
+            List<AchievementView> newlyUnlocked
     ) {}
 }
