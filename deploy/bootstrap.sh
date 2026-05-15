@@ -36,7 +36,27 @@ warn() { printf '\033[1;33m[warn]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31m[fatal]\033[0m %s\n' "$*" >&2; exit 1; }
 
 [ "$(id -u)" -eq 0 ] || die "must run as root (use sudo)"
-[ -n "$KEKAO_PUBLIC_HOST" ] || die "KEKAO_PUBLIC_HOST must be set (e.g. kekao.example.com)"
+
+# Allow re-running without re-passing env vars: pick them up from an existing
+# .env (created on a previous bootstrap). Values from the current environment
+# still win.
+EXISTING_ENV="${PROJECT_DIR}/.env"
+if [ -f "$EXISTING_ENV" ]; then
+    if [ -z "$KEKAO_PUBLIC_HOST" ]; then
+        KEKAO_PUBLIC_HOST="$(awk -F= '/^KEKAO_PUBLIC_HOST=/{sub(/^KEKAO_PUBLIC_HOST=/,""); print; exit}' "$EXISTING_ENV" || true)"
+    fi
+    if [ -z "$ACME_EMAIL" ]; then
+        ACME_EMAIL="$(awk -F= '/^ACME_EMAIL=/{sub(/^ACME_EMAIL=/,""); print; exit}' "$EXISTING_ENV" || true)"
+    fi
+fi
+
+# Reject the example placeholder so a stale .env doesn't silently deploy with
+# kekao.example.com.
+if [ "$KEKAO_PUBLIC_HOST" = "kekao.example.com" ]; then
+    die "KEKAO_PUBLIC_HOST is still the example value 'kekao.example.com'; set it to your real domain"
+fi
+
+[ -n "$KEKAO_PUBLIC_HOST" ] || die "KEKAO_PUBLIC_HOST must be set (e.g. KEKAO_PUBLIC_HOST=kekao.example.com sudo -E bash bootstrap.sh)"
 [ -n "$ACME_EMAIL" ] || warn "ACME_EMAIL not set — Caddy will use the default '<host>'"
 
 . /etc/os-release 2>/dev/null || die "unsupported OS (no /etc/os-release)"
