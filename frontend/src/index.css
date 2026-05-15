@@ -213,6 +213,35 @@
     --font-display: "JetBrains Mono", ui-monospace, monospace;
   }
 
+
+  [data-theme="anime"] {
+    --paper: 258 64% 10%;
+    --paper-elevated: 255 52% 16%;
+    --ink: 240 100% 96%;
+    --ink-soft: 248 44% 74%;
+    --seal: 326 100% 64%;
+    --seal-foreground: 258 64% 10%;
+    --brush: 188 100% 62%;
+    --watermark: 188 100% 62%;
+    --success: 158 100% 54%;
+    --success-foreground: 258 64% 10%;
+    --warning: 43 100% 60%;
+    --warning-foreground: 258 64% 10%;
+    --secondary: 255 46% 24%;
+    --secondary-foreground: 240 100% 96%;
+    --muted: 255 38% 20%;
+    --muted-foreground: 248 44% 74%;
+    --accent: 188 100% 62%;
+    --accent-foreground: 258 64% 10%;
+    --destructive: 350 100% 62%;
+    --destructive-foreground: 258 64% 10%;
+    --border: 255 34% 30%;
+    --input: 255 34% 30%;
+    --grain-opacity: 0.015;
+    --brush-radius: 1.125rem;
+    --font-display: "Nunito", "Noto Serif SC", serif;
+  }
+
   [data-theme="hacker"] {
     --paper: 120 20% 5%;
     --paper-elevated: 120 18% 8%;
@@ -271,6 +300,26 @@
       transparent 4px
     );
     z-index: 1000;
+  }
+
+
+  [data-theme="anime"] body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 18% 12%, hsl(var(--seal) / 0.34) 0 120px, transparent 210px),
+      radial-gradient(circle at 84% 0%, hsl(var(--accent) / 0.3) 0 170px, transparent 280px),
+      linear-gradient(180deg, transparent 0%, hsl(var(--paper) / 0.4) 100%);
+    z-index: 2;
+  }
+
+  [data-theme="anime"] .font-hanzi {
+    text-shadow:
+      0 0 24px hsl(var(--accent) / 0.5),
+      0 0 8px hsl(var(--seal) / 0.7);
+    letter-spacing: 0.02em;
   }
 
   /* Midnight: phosphor glow on hanzi. */

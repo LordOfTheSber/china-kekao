@@ -7,6 +7,7 @@ export type ThemeId =
   | "sakura"
   | "hacker"
   | "arcade"
+  | "anime"
   | "custom";
 
 export type ThemeMode = "light" | "dark";
@@ -107,6 +108,15 @@ export const THEMES: Record<Exclude<ThemeId, "custom">, ThemePreset> = {
     swatchInk: "#FFD93D",
     swatchSeal: "#FF3B6A",
   },
+  anime: {
+    id: "anime",
+    label: "アニメ Anime",
+    description: "Night city + cyan-magenta glow, true opening vibes.",
+    mode: "dark",
+    swatchPaper: "#120A2F",
+    swatchInk: "#F3F3FF",
+    swatchSeal: "#FF4FB3",
+  },
 };
 
 export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
@@ -118,6 +128,7 @@ export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
   "sakura",
   "hacker",
   "arcade",
+  "anime",
 ];
 
 export const DEFAULT_CUSTOM_TOKENS: ThemeTokens = {
