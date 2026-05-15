@@ -10,6 +10,7 @@ export type ThemeId =
   | "anime"
   | "anime-sky"
   | "anime-kawaii"
+  | "anime-otome"
   | "custom";
 
 export type ThemeMode = "light" | "dark";
@@ -137,6 +138,15 @@ export const THEMES: Record<Exclude<ThemeId, "custom">, ThemePreset> = {
     swatchInk: "#3B2A68",
     swatchSeal: "#FF4FA3",
   },
+  "anime-otome": {
+    id: "anime-otome",
+    label: "乙女 Otome",
+    description: "Anime heroine vibes: shōjo sparkles, sakura wind, and poster-style art.",
+    mode: "light",
+    swatchPaper: "#FFE4F3",
+    swatchInk: "#3F2A66",
+    swatchSeal: "#FF4D98",
+  },
 };
 
 export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
@@ -151,6 +161,7 @@ export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
   "anime",
   "anime-sky",
   "anime-kawaii",
+  "anime-otome",
 ];
 
 export const DEFAULT_CUSTOM_TOKENS: ThemeTokens = {

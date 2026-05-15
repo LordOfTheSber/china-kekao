@@ -300,6 +300,35 @@
     --font-display: "Nunito", "Noto Serif SC", serif;
   }
 
+
+  [data-theme="anime-otome"] {
+    --paper: 320 100% 95%;
+    --paper-elevated: 318 100% 98%;
+    --ink: 266 40% 24%;
+    --ink-soft: 265 22% 45%;
+    --seal: 336 92% 60%;
+    --seal-foreground: 318 100% 98%;
+    --brush: 198 82% 54%;
+    --watermark: 336 92% 60%;
+    --success: 156 50% 40%;
+    --success-foreground: 318 100% 98%;
+    --warning: 38 100% 56%;
+    --warning-foreground: 266 40% 24%;
+    --secondary: 309 58% 89%;
+    --secondary-foreground: 266 40% 24%;
+    --muted: 311 45% 92%;
+    --muted-foreground: 265 22% 45%;
+    --accent: 196 92% 66%;
+    --accent-foreground: 266 40% 24%;
+    --destructive: 352 82% 58%;
+    --destructive-foreground: 318 100% 98%;
+    --border: 309 36% 84%;
+    --input: 309 36% 84%;
+    --grain-opacity: 0.03;
+    --brush-radius: 1.5rem;
+    --font-display: "Nunito", "Noto Serif SC", serif;
+  }
+
   [data-theme="hacker"] {
     --paper: 120 20% 5%;
     --paper-elevated: 120 18% 8%;
@@ -370,7 +399,7 @@
     background-image: url("/anime-theme-bg.svg");
     background-size: cover;
     background-position: center;
-    opacity: 0.26;
+    opacity: 0.62;
     z-index: 1;
   }
 
@@ -387,7 +416,7 @@
     background-image: url("/anime-kawaii-bg.svg");
     background-size: cover;
     background-position: center;
-    opacity: 0.44;
+    opacity: 0.72;
     z-index: 1;
   }
 
@@ -408,6 +437,50 @@
   [data-theme="anime-kawaii"] .font-hanzi {
     text-shadow: 0 0 15px hsl(var(--seal) / 0.45), 0 0 28px hsl(var(--accent) / 0.3);
     letter-spacing: 0.02em;
+  }
+
+
+  [data-theme="anime-otome"] body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("/anime-otome-bg.svg");
+    background-size: cover;
+    background-position: center;
+    opacity: 0.78;
+    z-index: 1;
+  }
+
+  [data-theme="anime-otome"] body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 22% 26%, hsl(var(--seal) / 0.32) 0 4px, transparent 6px),
+      radial-gradient(circle at 56% 70%, hsl(var(--accent) / 0.28) 0 3px, transparent 5px),
+      radial-gradient(circle at 78% 28%, hsl(var(--seal) / 0.24) 0 5px, transparent 7px);
+    z-index: 3;
+  }
+
+  [data-theme="anime-otome"] .font-hanzi {
+    text-shadow: 0 0 18px hsl(var(--seal) / 0.45), 0 0 26px hsl(var(--accent) / 0.35);
+  }
+
+  [data-theme^="anime"] .isekai-truck {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: hsl(var(--ink));
+    text-shadow: 0 0 8px hsl(var(--accent) / 0.5);
+    animation: truck-drive 2s ease-in-out infinite;
+  }
+
+  @keyframes truck-drive {
+    0% { transform: translateX(-8px) }
+    50% { transform: translateX(8px) }
+    100% { transform: translateX(-8px) }
   }
 
   [data-theme="anime"] body::before {
