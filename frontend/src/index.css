@@ -357,6 +357,11 @@
     --font-display: "JetBrains Mono", ui-monospace, monospace;
   }
 
+  [data-theme^="anime"] body {
+    position: relative;
+    isolation: isolate;
+  }
+
   /* Theme-specific decorations. */
   [data-theme="neon"] body::after {
     content: "";
@@ -399,8 +404,8 @@
     background-image: url("/anime-theme-bg.svg");
     background-size: cover;
     background-position: center;
-    opacity: 0.62;
-    z-index: 1;
+    opacity: 0.4;
+    z-index: -1;
   }
 
   [data-theme="anime-sky"] .font-hanzi {
@@ -416,8 +421,8 @@
     background-image: url("/anime-kawaii-bg.svg");
     background-size: cover;
     background-position: center;
-    opacity: 0.72;
-    z-index: 1;
+    opacity: 0.46;
+    z-index: -1;
   }
 
   [data-theme="anime-kawaii"] body::after {
@@ -431,7 +436,7 @@
       radial-gradient(circle at 74% 24%, hsl(var(--seal) / 0.28) 0 5px, transparent 7px),
       radial-gradient(circle at 88% 72%, hsl(var(--accent) / 0.3) 0 4px, transparent 6px);
     background-size: 100% 100%;
-    z-index: 3;
+    z-index: -1;
   }
 
   [data-theme="anime-kawaii"] .font-hanzi {
@@ -448,8 +453,8 @@
     background-image: url("/anime-otome-bg.svg");
     background-size: cover;
     background-position: center;
-    opacity: 0.78;
-    z-index: 1;
+    opacity: 0.48;
+    z-index: -1;
   }
 
   [data-theme="anime-otome"] body::after {
@@ -461,7 +466,7 @@
       radial-gradient(circle at 22% 26%, hsl(var(--seal) / 0.32) 0 4px, transparent 6px),
       radial-gradient(circle at 56% 70%, hsl(var(--accent) / 0.28) 0 3px, transparent 5px),
       radial-gradient(circle at 78% 28%, hsl(var(--seal) / 0.24) 0 5px, transparent 7px);
-    z-index: 3;
+    z-index: -1;
   }
 
   [data-theme="anime-otome"] .font-hanzi {
