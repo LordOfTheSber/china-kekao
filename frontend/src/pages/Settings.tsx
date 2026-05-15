@@ -156,14 +156,7 @@ function SettingsForm({
 
   return (
     <div className="max-w-2xl mx-auto w-full flex flex-col gap-6">
-      <div>
-        <h1 className="font-hanzi text-3xl sm:text-4xl font-bold tracking-tight text-ink">
-          设置 <span className="text-2xl sm:text-3xl">Settings</span>
-        </h1>
-        <p className="text-sm text-ink-soft mt-1">
-          Saved on the server and synced across your devices.
-        </p>
-      </div>
+      <DebugHoldTitle />
 
       <AppearanceCard />
 
@@ -386,6 +379,62 @@ function NumberField({
           if (Number.isFinite(next)) onChange(Math.max(min, Math.min(max, Math.floor(next))));
         }}
       />
+    </div>
+  );
+}
+
+function DebugHoldTitle() {
+  const [debug, setDebug] = useState(false);
+  const timerRef = useState<{ id: number | null }>({ id: null })[0];
+
+  function down() {
+    if (debug) return;
+    timerRef.id = window.setTimeout(() => {
+      setDebug(true);
+      timerRef.id = null;
+    }, 3000);
+  }
+  function up() {
+    if (timerRef.id) {
+      window.clearTimeout(timerRef.id);
+      timerRef.id = null;
+    }
+  }
+
+  return (
+    <div>
+      <h1
+        className="font-hanzi text-3xl sm:text-4xl font-bold tracking-tight text-ink select-none cursor-default"
+        onMouseDown={down}
+        onMouseUp={up}
+        onMouseLeave={up}
+        onTouchStart={down}
+        onTouchEnd={up}
+      >
+        设置 <span className="text-2xl sm:text-3xl">Settings</span>
+      </h1>
+      <p className="text-sm text-ink-soft mt-1">
+        Saved on the server and synced across your devices.
+      </p>
+      {debug ? (
+        <div className="mt-3 font-mono text-[11px] text-ink-soft rounded-brush border border-brush/30 bg-paper-elevated p-3 leading-relaxed">
+          <div>debug mode unlocked</div>
+          <div>build: dev</div>
+          <div>theme: {document.documentElement.getAttribute("data-theme")}</div>
+          <div>
+            persisted theme:{" "}
+            {(() => {
+              try {
+                return JSON.parse(localStorage.getItem("kekao.theme") ?? "{}")
+                  ?.state?.themeId ?? "—";
+              } catch {
+                return "—";
+              }
+            })()}
+          </div>
+          <div>ua: {navigator.userAgent.slice(0, 60)}…</div>
+        </div>
+      ) : null}
     </div>
   );
 }

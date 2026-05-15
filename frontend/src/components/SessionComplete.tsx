@@ -1,10 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import HanziWriter from "hanzi-writer";
 
 import { Button } from "@/components/ui/button";
 import { BrushDivider } from "@/components/ui/brush-divider";
 import { Seal } from "@/components/ui/seal";
+import { AchievementUnlock } from "@/components/AchievementUnlock";
+import { claimAchievement, type AchievementView } from "@/api/achievements";
 import { cn } from "@/lib/utils";
 
 export interface SessionCompleteProps {
@@ -29,6 +31,43 @@ export function SessionComplete({ total, stats, streakAfter }: SessionCompletePr
   const perfect = total > 0 && stats.again === 0 && stats.hard === 0;
   const hero = pickHeroChar(total, perfect);
   const ref = useRef<HTMLDivElement>(null);
+  const [bonusUnlocks, setBonusUnlocks] = useState<AchievementView[]>([]);
+
+  useEffect(() => {
+    if (total === 0) return;
+    const localHour = new Date().getHours();
+    const tasks: Array<Promise<AchievementView | null>> = [];
+
+    if (perfect && total >= 5) {
+      tasks.push(
+        claimAchievement("PERFECT_DAY", {
+          totalCount: total,
+          againCount: stats.again,
+          hardCount: stats.hard,
+        }).then((r) => (r.unlocked ? (r as unknown as { achievement: AchievementView }).achievement : null))
+          .catch(() => null),
+      );
+    }
+    if (localHour >= 0 && localHour < 5) {
+      tasks.push(
+        claimAchievement("NIGHT_OWL", { localHour })
+          .then((r) => (r.unlocked ? (r as unknown as { achievement: AchievementView }).achievement : null))
+          .catch(() => null),
+      );
+    }
+    if (localHour >= 5 && localHour < 8) {
+      tasks.push(
+        claimAchievement("EARLY_BIRD", { localHour })
+          .then((r) => (r.unlocked ? (r as unknown as { achievement: AchievementView }).achievement : null))
+          .catch(() => null),
+      );
+    }
+    if (tasks.length === 0) return;
+    Promise.all(tasks).then((results) => {
+      const unlocked = results.filter((x): x is AchievementView => x !== null);
+      if (unlocked.length > 0) setBonusUnlocks(unlocked);
+    });
+  }, [perfect, total, stats.again, stats.hard]);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -107,6 +146,11 @@ export function SessionComplete({ total, stats, streakAfter }: SessionCompletePr
           </Link>
         </Button>
       </div>
+
+      <AchievementUnlock
+        unlocks={bonusUnlocks}
+        onDone={() => setBonusUnlocks([])}
+      />
     </div>
   );
 }

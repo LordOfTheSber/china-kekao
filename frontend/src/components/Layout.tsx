@@ -1,12 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { PaperBg } from "@/components/ui/paper-bg";
 import { Seal } from "@/components/ui/seal";
+import { AchievementUnlock } from "@/components/AchievementUnlock";
+import { PandaEgg } from "@/components/PandaEgg";
 import { useAuthStore } from "@/store/auth";
 import { usePreferencesStore } from "@/store/preferences";
+import { useThemeStore } from "@/store/theme";
 import { fetchUserSettings } from "@/api/me";
+import { claimAchievement, type AchievementView } from "@/api/achievements";
+import { useKonamiCode } from "@/lib/easter-eggs";
+import { toast } from "@/components/Toaster";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -15,6 +21,7 @@ const NAV_ITEMS = [
   { to: "/decks", label: "Decks" },
   { to: "/search", label: "Search" },
   { to: "/stats", label: "Stats" },
+  { to: "/achievements", label: "Seals" },
   { to: "/settings", label: "Settings" },
 ];
 
@@ -24,6 +31,40 @@ export function Layout() {
   const user = useAuthStore((s) => s.user);
   const clear = useAuthStore((s) => s.clear);
   const hydrate = usePreferencesStore((s) => s.hydrate);
+  const setTheme = useThemeStore((s) => s.setTheme);
+  const [unlocks, setUnlocks] = useState<AchievementView[]>([]);
+  const [pandaOpen, setPandaOpen] = useState(false);
+  const logoClicksRef = useRef(0);
+  const logoTimerRef = useRef<number | null>(null);
+
+  useKonamiCode((achievement) => {
+    setTheme("arcade");
+    toast({
+      title: "Arcade mode unlocked",
+      description: "Try the new theme in Settings → Appearance.",
+    });
+    if (achievement) setUnlocks((prev) => [...prev, achievement]);
+  });
+
+  function handleLogoClick() {
+    logoClicksRef.current += 1;
+    if (logoTimerRef.current) window.clearTimeout(logoTimerRef.current);
+    logoTimerRef.current = window.setTimeout(() => {
+      logoClicksRef.current = 0;
+    }, 2500);
+    if (logoClicksRef.current >= 10) {
+      logoClicksRef.current = 0;
+      setPandaOpen(true);
+      claimAchievement("PANDA")
+        .then((r) => {
+          if (r.unlocked) {
+            const ach = (r as unknown as { achievement: AchievementView }).achievement;
+            setUnlocks((prev) => [...prev, ach]);
+          }
+        })
+        .catch(() => undefined);
+    }
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -60,6 +101,7 @@ export function Layout() {
         <div className="container flex h-14 items-center justify-between gap-3">
           <NavLink
             to="/"
+            onClick={handleLogoClick}
             className="flex items-center gap-2.5 font-semibold tracking-tight min-w-0"
           >
             <Seal size="sm" tilt={false} className="font-hanzi">
@@ -132,6 +174,8 @@ export function Layout() {
       >
         <Outlet />
       </main>
+      <AchievementUnlock unlocks={unlocks} onDone={() => setUnlocks([])} />
+      <PandaEgg open={pandaOpen} onClose={() => setPandaOpen(false)} />
     </div>
   );
 }

@@ -4,10 +4,10 @@ import { Link } from "react-router-dom";
 import { fetchDashboard } from "@/api/stats";
 import type { DashboardStats } from "@/api/types";
 import { HanziLoader } from "@/components/HanziLoader";
+import { StreakBamboo } from "@/components/StreakBamboo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BrushDivider } from "@/components/ui/brush-divider";
-import { Seal } from "@/components/ui/seal";
 import { cn } from "@/lib/utils";
 
 function pickCopy(stats: DashboardStats): { title: string; body: string } {
@@ -134,12 +134,21 @@ export function DashboardPage() {
         ]}
       />
 
-      {data.currentStreak >= 7 ? (
-        <div className="flex items-center gap-2 text-sm text-ink-soft">
-          <Seal size="sm" shape="round" tilt={false}>
-            勤
-          </Seal>
-          Diligent week — keep going.
+      {data.currentStreak > 0 ? (
+        <div className="flex items-center gap-3 text-sm text-ink-soft">
+          <StreakBamboo streak={data.currentStreak} />
+          <div className="flex flex-col">
+            <span className="text-ink font-semibold tabular-nums">
+              {data.currentStreak} day streak
+            </span>
+            <span className="text-xs">
+              {data.currentStreak >= 30
+                ? "学霸 — true scholar"
+                : data.currentStreak >= 7
+                  ? "勤 — diligent week"
+                  : "keep watering it"}
+            </span>
+          </div>
         </div>
       ) : null}
     </div>

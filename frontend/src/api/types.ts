@@ -1,3 +1,5 @@
+import type { AchievementView } from "@/api/achievements";
+
 export interface TokenPair {
   accessToken: string;
   refreshToken: string;
@@ -48,4 +50,5 @@ export interface ReviewResponse {
   nextDue: string;
   scheduledDays: number;
   elapsedDays: number;
+  newlyUnlocked?: AchievementView[];
 }

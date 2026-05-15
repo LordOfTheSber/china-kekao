@@ -42,6 +42,13 @@ export function HanziChoiceGrid({
     setPicked(value);
     const correct = value === correctCharacter;
     setFeedback(correct ? "correct" : "wrong");
+    if (navigator.vibrate) {
+      try {
+        navigator.vibrate(correct ? 20 : [40, 40, 40]);
+      } catch {
+        /* noop */
+      }
+    }
     const rating: Rating = correct ? "GOOD" : "AGAIN";
     setTimeout(() => onComplete(rating), correct ? 700 : 600);
   }

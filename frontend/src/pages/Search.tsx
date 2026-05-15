@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Seal } from "@/components/ui/seal";
 import { BrushDivider } from "@/components/ui/brush-divider";
+import { toast } from "@/components/Toaster";
 import { cn } from "@/lib/utils";
 
 const HSK_OPTIONS: Array<{ value: number | null; label: string }> = [
@@ -34,6 +35,17 @@ export function SearchPage() {
       setPage(0);
     }, 250);
     return () => window.clearTimeout(handle);
+  }, [query]);
+
+  // Easter egg: typing the greeting triggers a hello toast.
+  useEffect(() => {
+    const trimmed = query.trim().toLowerCase();
+    if (trimmed === "ni hao" || trimmed === "nihao" || trimmed === "你好") {
+      toast({
+        title: "你好!",
+        description: "Nǐ hǎo — hello back!",
+      });
+    }
   }, [query]);
 
   useEffect(() => {

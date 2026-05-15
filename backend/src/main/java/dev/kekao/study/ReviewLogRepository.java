@@ -10,6 +10,9 @@ import java.util.List;
 public interface ReviewLogRepository extends JpaRepository<ReviewLogEntity, Long> {
     List<ReviewLogEntity> findByUserCardIdOrderByReviewedAtAsc(Long userCardId);
 
+    @Query("SELECT COUNT(rl) FROM ReviewLogEntity rl WHERE rl.userCard.user.id = :userId")
+    long countByUserId(@Param("userId") Long userId);
+
     @Query("""
             SELECT rl.reviewedAt, rl.rating FROM ReviewLogEntity rl
             WHERE rl.userCard.user.id = :userId

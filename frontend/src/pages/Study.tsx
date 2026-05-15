@@ -9,6 +9,8 @@ import { HanziDrawingPad, type DrawingResult } from "@/components/HanziDrawingPa
 import { HanziChoiceGrid } from "@/components/HanziChoiceGrid";
 import { HanziLoader } from "@/components/HanziLoader";
 import { SessionComplete } from "@/components/SessionComplete";
+import { AchievementUnlock } from "@/components/AchievementUnlock";
+import type { AchievementView } from "@/api/achievements";
 import { usePreferencesStore } from "@/store/preferences";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,6 +99,7 @@ function SessionRunner({
   practicing: boolean;
   onFinished: () => void;
 }) {
+  const queryClient = useQueryClient();
   const productionMode = usePreferencesStore((s) => s.productionMode);
   const helpLevel = usePreferencesStore((s) => s.helpLevel);
   const withTones = usePreferencesStore((s) => s.withTones);
@@ -113,6 +116,7 @@ function SessionRunner({
   const [stats, setStats] = useState<SessionStat>({ again: 0, hard: 0, good: 0, easy: 0 });
   const [pendingRating, setPendingRating] = useState<Rating | null>(null);
   const [showNearDialog, setShowNearDialog] = useState(false);
+  const [unlocks, setUnlocks] = useState<AchievementView[]>([]);
   const startedAtRef = useRef<number>(performance.now());
   const pinyinInputRef = useRef<HTMLInputElement>(null);
 
@@ -122,6 +126,12 @@ function SessionRunner({
 
   const reviewMutation = useMutation({
     mutationFn: postReview,
+    onSuccess: (resp) => {
+      if (resp.newlyUnlocked && resp.newlyUnlocked.length > 0) {
+        setUnlocks((prev) => [...prev, ...resp.newlyUnlocked!]);
+        queryClient.invalidateQueries({ queryKey: ["achievements"] });
+      }
+    },
     onError: (error) => {
       toast({
         title: "Could not save review",
@@ -232,7 +242,12 @@ function SessionRunner({
   }, [revealed, grade, showNearDialog, pendingRating]);
 
   if (finished) {
-    return <SessionSummary total={cards.length} stats={stats} />;
+    return (
+      <>
+        <SessionSummary total={cards.length} stats={stats} />
+        <AchievementUnlock unlocks={unlocks} onDone={() => setUnlocks([])} />
+      </>
+    );
   }
 
   const total = cards.length;
@@ -307,6 +322,8 @@ function SessionRunner({
           </Button>
         </div>
       )}
+
+      <AchievementUnlock unlocks={unlocks} onDone={() => setUnlocks([])} />
 
       <NearMatchDialog
         open={showNearDialog}

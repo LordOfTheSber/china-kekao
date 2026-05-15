@@ -185,6 +185,34 @@
     --font-display: "Nunito", "Noto Serif SC", serif;
   }
 
+  [data-theme="arcade"] {
+    --paper: 270 65% 12%;
+    --paper-elevated: 270 55% 18%;
+    --ink: 50 100% 62%;
+    --ink-soft: 50 70% 75%;
+    --seal: 345 100% 62%;
+    --seal-foreground: 270 65% 12%;
+    --brush: 195 100% 60%;
+    --watermark: 50 100% 62%;
+    --success: 145 100% 55%;
+    --success-foreground: 270 65% 12%;
+    --warning: 30 100% 60%;
+    --warning-foreground: 270 65% 12%;
+    --secondary: 270 50% 22%;
+    --secondary-foreground: 50 100% 62%;
+    --muted: 270 45% 18%;
+    --muted-foreground: 50 70% 75%;
+    --accent: 195 100% 50%;
+    --accent-foreground: 270 65% 12%;
+    --destructive: 0 100% 60%;
+    --destructive-foreground: 270 65% 12%;
+    --border: 270 45% 28%;
+    --input: 270 45% 28%;
+    --grain-opacity: 0;
+    --brush-radius: 0;
+    --font-display: "JetBrains Mono", ui-monospace, monospace;
+  }
+
   [data-theme="hacker"] {
     --paper: 120 20% 5%;
     --paper-elevated: 120 18% 8%;
@@ -243,6 +271,84 @@
       transparent 4px
     );
     z-index: 1000;
+  }
+
+  /* Midnight: phosphor glow on hanzi. */
+  [data-theme="midnight"] .font-hanzi {
+    text-shadow: 0 0 14px hsl(var(--seal) / 0.55),
+      0 0 2px hsl(var(--seal) / 0.4);
+  }
+
+  /* Neon: glitch shadow on hanzi (subtle cyan/magenta split). */
+  [data-theme="neon"] .font-hanzi {
+    text-shadow: -1.5px 0 0 hsl(var(--accent) / 0.7),
+      1.5px 0 0 hsl(var(--seal) / 0.7);
+  }
+
+  /* Arcade: pixelated rendering + chunky borders. */
+  [data-theme="arcade"] {
+    image-rendering: pixelated;
+  }
+  [data-theme="arcade"] .font-hanzi {
+    text-shadow: 2px 2px 0 hsl(var(--seal)),
+      -2px -2px 0 hsl(var(--accent));
+    letter-spacing: 0.04em;
+  }
+  [data-theme="arcade"] button,
+  [data-theme="arcade"] .rounded-brush,
+  [data-theme="arcade"] [class*="rounded"] {
+    border-radius: 0 !important;
+  }
+  [data-theme="arcade"] body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(
+        to right,
+        transparent 0,
+        transparent 7px,
+        hsl(var(--accent) / 0.04) 8px,
+        transparent 9px
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 7px,
+        hsl(var(--accent) / 0.04) 8px,
+        transparent 9px
+      );
+    z-index: 1000;
+  }
+
+  /* Ghibli: drifting petals. Hidden when motion is off. */
+  [data-theme="ghibli"] body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle at 12% 18%, hsl(var(--seal) / 0.32) 0 4px, transparent 5px),
+      radial-gradient(circle at 38% 65%, hsl(var(--seal) / 0.28) 0 3px, transparent 4px),
+      radial-gradient(circle at 72% 30%, hsl(var(--seal) / 0.3) 0 4px, transparent 5px),
+      radial-gradient(circle at 88% 78%, hsl(var(--seal) / 0.25) 0 3px, transparent 4px),
+      radial-gradient(circle at 54% 12%, hsl(var(--seal) / 0.3) 0 3px, transparent 4px);
+    background-size: 100% 100%;
+    animation: petal-drift 18s linear infinite;
+    z-index: 5;
+    opacity: 0.7;
+  }
+  [data-motion="off"] [data-theme="ghibli"] body::before,
+  [data-theme="ghibli"][data-motion="off"] body::before {
+    animation: none;
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-theme="ghibli"] body::before {
+      animation: none;
+      opacity: 0;
+    }
   }
 
   /* Reduced motion: honor system + theme override. */

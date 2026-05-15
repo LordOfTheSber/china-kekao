@@ -6,6 +6,7 @@ export type ThemeId =
   | "ghibli"
   | "sakura"
   | "hacker"
+  | "arcade"
   | "custom";
 
 export type ThemeMode = "light" | "dark";
@@ -97,6 +98,15 @@ export const THEMES: Record<Exclude<ThemeId, "custom">, ThemePreset> = {
     swatchInk: "#62FF7E",
     swatchSeal: "#62FF7E",
   },
+  arcade: {
+    id: "arcade",
+    label: "街机 Arcade",
+    description: "8-bit pixel-art theme. Unlocked via the Konami code.",
+    mode: "dark",
+    swatchPaper: "#1A0938",
+    swatchInk: "#FFD93D",
+    swatchSeal: "#FF3B6A",
+  },
 };
 
 export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
@@ -107,6 +117,7 @@ export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
   "ghibli",
   "sakura",
   "hacker",
+  "arcade",
 ];
 
 export const DEFAULT_CUSTOM_TOKENS: ThemeTokens = {

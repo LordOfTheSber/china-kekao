@@ -1,5 +1,6 @@
 package dev.kekao.study;
 
+import dev.kekao.achievement.AchievementService;
 import dev.kekao.hanzi.HanziEntity;
 import dev.kekao.hanzi.HanziRepository;
 import dev.kekao.hanzi.HanziTranslationEntity;
@@ -40,18 +41,31 @@ public class StudyController {
     private final UserCardRepository userCards;
     private final HanziTranslationRepository translations;
     private final HanziRepository hanzi;
+    private final AchievementService achievements;
 
     @Autowired
     public StudyController(StudySessionService sessionService,
                            SrsService srsService,
                            UserCardRepository userCards,
                            HanziTranslationRepository translations,
-                           HanziRepository hanzi) {
+                           HanziRepository hanzi,
+                           AchievementService achievements) {
         this.sessionService = sessionService;
         this.srsService = srsService;
         this.userCards = userCards;
         this.translations = translations;
         this.hanzi = hanzi;
+        this.achievements = achievements;
+    }
+
+    // Test constructor — keeps existing integration tests working without the
+    // achievement subsystem.
+    public StudyController(StudySessionService sessionService,
+                           SrsService srsService,
+                           UserCardRepository userCards,
+                           HanziTranslationRepository translations,
+                           HanziRepository hanzi) {
+        this(sessionService, srsService, userCards, translations, hanzi, null);
     }
 
     @GetMapping("/session")
@@ -106,6 +120,11 @@ public class StudyController {
                 req.strokeMistakes());
         SrsScheduleResult result = srsService.review(req.userCardId(), req.rating(), metadata);
 
+        List<dev.kekao.achievement.AchievementDtos.AchievementView> newlyUnlocked =
+                achievements == null
+                        ? java.util.List.of()
+                        : achievements.checkAfterReview(userId);
+
         ReviewResponse body = new ReviewResponse(
                 req.userCardId(),
                 CardState.valueOf(result.state().name()),
@@ -113,7 +132,8 @@ public class StudyController {
                 result.difficulty(),
                 result.nextDue(),
                 result.scheduledDays(),
-                result.elapsedDays());
+                result.elapsedDays(),
+                newlyUnlocked);
         return ResponseEntity.ok(body);
     }
 
