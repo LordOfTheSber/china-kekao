@@ -26,7 +26,22 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Seal } from "@/components/ui/seal";
+import { HanziLoader } from "@/components/HanziLoader";
 import { toast } from "@/components/Toaster";
+
+function pickWatermark(name: string): string {
+  for (const ch of name) {
+    const code = ch.codePointAt(0);
+    if (code && code >= 0x4e00 && code <= 0x9fff) return ch;
+  }
+  return "永";
+}
+
+function hskLevelOf(name: string): number | null {
+  const m = name.match(/HSK\s*(\d)/i);
+  return m ? Number(m[1]) : null;
+}
 
 export function DecksPage() {
   const queryClient = useQueryClient();
@@ -85,12 +100,8 @@ export function DecksPage() {
 
   if (isLoading) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="pt-6 h-24 animate-pulse bg-muted/40" />
-          </Card>
-        ))}
+      <div className="min-h-[40vh] flex items-center justify-center">
+        <HanziLoader size={96} label="Gathering your decks…" />
       </div>
     );
   }
@@ -114,8 +125,10 @@ export function DecksPage() {
     <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Decks</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="font-hanzi text-3xl sm:text-4xl font-bold tracking-tight text-ink">
+            册 <span className="text-2xl sm:text-3xl">Decks</span>
+          </h1>
+          <p className="text-sm text-ink-soft mt-1">
             Subscribe to add every card in a deck to your study queue
             (Recognition + Production), or build your own.
           </p>
@@ -126,12 +139,15 @@ export function DecksPage() {
       </div>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">My decks</h2>
+        <h2 className="font-hanzi text-xl font-bold text-ink">My decks</h2>
         {myDecks.length === 0 ? (
           <Card>
-            <CardContent className="pt-6 text-sm text-muted-foreground">
-              You haven&apos;t created any decks yet. Click <em>New deck</em> to
-              start a custom collection.
+            <CardContent className="pt-6 flex flex-col items-center gap-3 text-center">
+              <div className="font-hanzi text-6xl text-ink/30 leading-none">始</div>
+              <p className="text-sm text-ink-soft">
+                You haven&apos;t created any decks yet. Click <em>New deck</em> above
+                to start a custom collection.
+              </p>
             </CardContent>
           </Card>
         ) : (
@@ -150,7 +166,7 @@ export function DecksPage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium">System decks</h2>
+        <h2 className="font-hanzi text-xl font-bold text-ink">System decks</h2>
         {systemDecks.length === 0 ? (
           <Card>
             <CardContent className="pt-6 text-sm text-muted-foreground">
@@ -188,23 +204,40 @@ function DeckCard({
   onSubscribe: () => void;
   onUnsubscribe: () => void;
 }) {
+  const hsk = deck.isSystem ? hskLevelOf(deck.name) : null;
+  const watermark = pickWatermark(deck.name);
   return (
-    <Card className="flex flex-col hover:shadow-card-hover">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base sm:text-lg flex items-start justify-between gap-2">
+    <Card className="group relative flex flex-col overflow-hidden bg-paper-elevated shadow-card transition-all duration-300 hover:-translate-y-1 hover:rotate-[-0.4deg] hover:shadow-tactile motion-reduce:hover:transform-none">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -right-2 -bottom-6 font-hanzi text-[9rem] leading-none text-watermark opacity-[0.04] transition-opacity duration-300 group-hover:opacity-[0.12]"
+      >
+        {watermark}
+      </span>
+      {hsk !== null ? (
+        <Seal
+          size="sm"
+          className="absolute top-3 right-3 z-10"
+          title={`HSK ${hsk}`}
+        >
+          {hsk}
+        </Seal>
+      ) : null}
+      <CardHeader className="pb-3 relative">
+        <CardTitle className="font-hanzi text-base sm:text-lg flex items-start justify-between gap-2 pr-12">
           <span className="min-w-0 break-words">{deck.name}</span>
-          {deck.subscribed ? (
-            <span className="shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-              Subscribed
-            </span>
-          ) : null}
         </CardTitle>
         <CardDescription className="line-clamp-2">
           {deck.description ?? `${deck.hanziCount} hanzi`}
         </CardDescription>
+        {deck.subscribed ? (
+          <span className="absolute right-3 top-12 text-[10px] font-bold uppercase tracking-widest text-success">
+            订
+          </span>
+        ) : null}
       </CardHeader>
-      <CardContent className="mt-auto flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground">
+      <CardContent className="mt-auto flex flex-wrap items-center justify-between gap-2 relative">
+        <span className="text-xs text-ink-soft tabular-nums">
           {deck.hanziCount} hanzi
         </span>
         <div className="flex flex-wrap items-center gap-2 justify-end">

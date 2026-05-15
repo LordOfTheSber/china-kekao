@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import HanziWriter from "hanzi-writer";
 
 import { Button } from "@/components/ui/button";
+import { FeedbackSeal, type FeedbackKind } from "@/components/FeedbackOverlay";
+import { cn } from "@/lib/utils";
 import type { Rating } from "@/api/types";
 import type { HelpLevel } from "@/store/preferences";
 
@@ -67,6 +69,14 @@ export function HanziDrawingPad({
   const [size, setSize] = useState<number>(() => pickSize());
   const [loadError, setLoadError] = useState<string | null>(null);
   const [animating, setAnimating] = useState<boolean>(false);
+  const [feedback, setFeedback] = useState<FeedbackKind>(null);
+  const [actionsVisible, setActionsVisible] = useState<boolean>(false);
+
+  useEffect(() => {
+    setActionsVisible(false);
+    const t = window.setTimeout(() => setActionsVisible(true), 3000);
+    return () => window.clearTimeout(t);
+  }, [character]);
 
   useEffect(() => {
     function onResize() {
@@ -133,12 +143,16 @@ export function HanziDrawingPad({
         if (cancelled || reportedRef.current) return;
         reportedRef.current = true;
         const durationMs = Math.max(0, Math.round(performance.now() - startedAtRef.current));
-        onComplete({
-          rating: ratingFor(hintCountRef.current, info.totalMistakes, true),
-          hintCount: hintCountRef.current,
-          strokeMistakes: info.totalMistakes,
-          durationMs,
-        });
+        const rating = ratingFor(hintCountRef.current, info.totalMistakes, true);
+        setFeedback(rating === "EASY" || rating === "GOOD" ? "correct" : "wrong");
+        window.setTimeout(() => {
+          onComplete({
+            rating,
+            hintCount: hintCountRef.current,
+            strokeMistakes: info.totalMistakes,
+            durationMs,
+          });
+        }, 600);
       },
     });
 
@@ -174,20 +188,31 @@ export function HanziDrawingPad({
           Could not load stroke data for &ldquo;{character}&rdquo;.
         </div>
       ) : null}
+      <div className="relative">
+        <div
+          ref={containerRef}
+          className={cn(
+            "rounded-brush border border-brush/30 bg-paper-elevated shadow-card max-w-full",
+            feedback === "wrong" && "animate-gentle-wobble",
+          )}
+          style={{
+            width: size,
+            height: size,
+            touchAction: "none",
+          }}
+        />
+        <FeedbackSeal trigger={feedback} />
+      </div>
       <div
-        ref={containerRef}
-        className="rounded-lg border bg-background shadow-card max-w-full"
-        style={{
-          width: size,
-          height: size,
-          touchAction: "none",
-        }}
-      />
-      <div className="flex flex-wrap justify-center gap-2">
-        <Button variant="outline" size="sm" onClick={handleSkip}>
+        className={cn(
+          "flex flex-wrap justify-center gap-2 transition-opacity duration-500",
+          actionsVisible ? "opacity-100" : "opacity-0 pointer-events-none",
+        )}
+      >
+        <Button variant="ghost" size="sm" onClick={handleSkip}>
           Skip
         </Button>
-        <Button variant="outline" size="sm" onClick={handleShowOrder} disabled={animating}>
+        <Button variant="ghost" size="sm" onClick={handleShowOrder} disabled={animating}>
           Show stroke order
         </Button>
       </div>

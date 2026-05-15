@@ -17,6 +17,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { HanziLoader } from "@/components/HanziLoader";
+import { AppearanceCard } from "@/components/AppearanceCard";
 import { toast } from "@/components/Toaster";
 import { cn } from "@/lib/utils";
 import {
@@ -83,7 +85,9 @@ export function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto h-32 rounded bg-muted animate-pulse" />
+      <div className="min-h-[40vh] flex items-center justify-center">
+        <HanziLoader size={96} label="Loading preferences…" />
+      </div>
     );
   }
   if (isError || !data) {
@@ -153,11 +157,15 @@ function SettingsForm({
   return (
     <div className="max-w-2xl mx-auto w-full flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1 className="font-hanzi text-3xl sm:text-4xl font-bold tracking-tight text-ink">
+          设置 <span className="text-2xl sm:text-3xl">Settings</span>
+        </h1>
+        <p className="text-sm text-ink-soft mt-1">
           Saved on the server and synced across your devices.
         </p>
       </div>
+
+      <AppearanceCard />
 
       <Card>
         <CardHeader>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { FeedbackSeal, type FeedbackKind } from "@/components/FeedbackOverlay";
 import { cn } from "@/lib/utils";
 import type { Rating } from "@/api/types";
 
@@ -29,42 +30,51 @@ export function HanziChoiceGrid({
     [correctCharacter, distractors],
   );
   const [picked, setPicked] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackKind>(null);
 
   useEffect(() => {
     setPicked(null);
+    setFeedback(null);
   }, [correctCharacter]);
 
   function handlePick(value: string) {
     if (picked) return;
     setPicked(value);
-    const rating: Rating = value === correctCharacter ? "GOOD" : "AGAIN";
-    setTimeout(() => onComplete(rating), 450);
+    const correct = value === correctCharacter;
+    setFeedback(correct ? "correct" : "wrong");
+    const rating: Rating = correct ? "GOOD" : "AGAIN";
+    setTimeout(() => onComplete(rating), correct ? 700 : 600);
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full">
-      {choices.map((choice) => {
-        const isPicked = picked === choice;
-        const isCorrect = choice === correctCharacter;
-        const reveal = picked !== null;
-        return (
-          <Button
-            key={choice}
-            type="button"
-            variant="outline"
-            disabled={picked !== null}
-            onClick={() => handlePick(choice)}
-            className={cn(
-              "aspect-square h-auto w-full text-3xl sm:text-4xl font-serif min-w-0 transition-all",
-              reveal && isCorrect && "bg-emerald-100 border-emerald-500 text-emerald-900 dark:bg-emerald-500/15 dark:text-emerald-300",
-              reveal && isPicked && !isCorrect && "bg-rose-100 border-rose-500 text-rose-900 dark:bg-rose-500/15 dark:text-rose-300",
-            )}
-            lang="zh-Hans"
-          >
-            {choice}
-          </Button>
-        );
-      })}
+    <div className="relative w-full">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full">
+        {choices.map((choice) => {
+          const isPicked = picked === choice;
+          const isCorrect = choice === correctCharacter;
+          const reveal = picked !== null;
+          return (
+            <Button
+              key={choice}
+              type="button"
+              variant="outline"
+              disabled={picked !== null}
+              onClick={() => handlePick(choice)}
+              className={cn(
+                "aspect-square h-auto w-full text-3xl sm:text-4xl font-hanzi min-w-0 transition-all",
+                reveal && isCorrect &&
+                  "bg-success/15 border-success text-success",
+                reveal && isPicked && !isCorrect &&
+                  "bg-destructive/10 border-destructive text-destructive animate-gentle-wobble",
+              )}
+              lang="zh-Hans"
+            >
+              {choice}
+            </Button>
+          );
+        })}
+      </div>
+      <FeedbackSeal trigger={feedback} />
     </div>
   );
 }

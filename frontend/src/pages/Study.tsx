@@ -7,6 +7,8 @@ import { extractErrorMessage } from "@/api/auth";
 import type { Rating, StudyCard } from "@/api/types";
 import { HanziDrawingPad, type DrawingResult } from "@/components/HanziDrawingPad";
 import { HanziChoiceGrid } from "@/components/HanziChoiceGrid";
+import { HanziLoader } from "@/components/HanziLoader";
+import { SessionComplete } from "@/components/SessionComplete";
 import { usePreferencesStore } from "@/store/preferences";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,10 +42,10 @@ const RATINGS: Array<{
   shortcut: string;
   className: string;
 }> = [
-  { rating: "AGAIN", label: "Again", shortcut: "1", className: "bg-rose-600 text-white hover:bg-rose-600/90" },
-  { rating: "HARD", label: "Hard", shortcut: "2", className: "bg-amber-500 text-white hover:bg-amber-500/90" },
-  { rating: "GOOD", label: "Good", shortcut: "3", className: "bg-emerald-600 text-white hover:bg-emerald-600/90" },
-  { rating: "EASY", label: "Easy", shortcut: "4", className: "bg-sky-600 text-white hover:bg-sky-600/90" },
+  { rating: "AGAIN", label: "Again", shortcut: "1", className: "bg-destructive text-destructive-foreground hover:bg-destructive/90" },
+  { rating: "HARD", label: "Hard", shortcut: "2", className: "bg-warning text-warning-foreground hover:bg-warning/90" },
+  { rating: "GOOD", label: "Good", shortcut: "3", className: "bg-success text-success-foreground hover:bg-success/90" },
+  { rating: "EASY", label: "Easy", shortcut: "4", className: "bg-seal text-seal-foreground hover:bg-seal/90" },
 ];
 
 export function StudyPage() {
@@ -248,9 +250,9 @@ function SessionRunner({
             {card.mode}
           </span>
         </div>
-        <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all"
+            className="h-full bg-seal transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -361,7 +363,7 @@ function RecognitionCard({
     <>
       <div className="flex flex-col items-center gap-2">
         <div
-          className="text-8xl sm:text-9xl font-serif select-none leading-none drop-shadow-sm"
+          className="text-[clamp(6rem,22vw,12rem)] font-hanzi font-bold text-ink select-none leading-none"
           lang="zh-Hans"
           aria-label={`Hanzi character ${card.character ?? ""}`}
         >
@@ -646,15 +648,8 @@ function NearMatchDialog({
 
 function SessionSkeleton() {
   return (
-    <div className="max-w-2xl mx-auto flex flex-col gap-6">
-      <div className="h-2 w-full rounded-full bg-muted animate-pulse" />
-      <Card>
-        <CardContent className="pt-8 pb-6 flex flex-col items-center gap-6">
-          <div className="h-24 w-24 rounded bg-muted animate-pulse" />
-          <div className="h-10 w-full rounded bg-muted animate-pulse" />
-          <div className="h-10 w-full rounded bg-muted animate-pulse" />
-        </CardContent>
-      </Card>
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <HanziLoader size={120} label="Drawing your queue…" />
     </div>
   );
 }
@@ -680,42 +675,5 @@ function EmptyQueue({ practicing }: { practicing: boolean }) {
 }
 
 function SessionSummary({ total, stats }: { total: number; stats: SessionStat }) {
-  const correctish = stats.good + stats.easy;
-  const accuracy = total > 0 ? Math.round((correctish / total) * 100) : 0;
-  return (
-    <Card className="max-w-xl mx-auto">
-      <CardHeader>
-        <CardTitle>Session complete 🎉</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <p className="text-sm text-muted-foreground">
-          You reviewed <strong>{total}</strong> card{total === 1 ? "" : "s"}.
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-          <SummaryStat label="Again" value={stats.again} className="text-rose-600" />
-          <SummaryStat label="Hard" value={stats.hard} className="text-amber-600" />
-          <SummaryStat label="Good" value={stats.good} className="text-emerald-600" />
-          <SummaryStat label="Easy" value={stats.easy} className="text-sky-600" />
-        </div>
-        <p className="text-sm">Accuracy this session: <strong>{accuracy}%</strong></p>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild>
-            <Link to="/">Back to dashboard</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link to="/study" reloadDocument>Start another</Link>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function SummaryStat({ label, value, className }: { label: string; value: number; className: string }) {
-  return (
-    <div className="rounded-md border p-3">
-      <div className={cn("text-2xl font-semibold", className)}>{value}</div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-    </div>
-  );
+  return <SessionComplete total={total} stats={stats} />;
 }

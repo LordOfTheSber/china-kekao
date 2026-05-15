@@ -3,34 +3,44 @@ import { Link } from "react-router-dom";
 
 import { fetchDashboard } from "@/api/stats";
 import type { DashboardStats } from "@/api/types";
+import { HanziLoader } from "@/components/HanziLoader";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { BrushDivider } from "@/components/ui/brush-divider";
+import { Seal } from "@/components/ui/seal";
 import { cn } from "@/lib/utils";
 
-interface StatItem {
-  key: keyof DashboardStats;
-  label: string;
-  format: (value: number) => string;
-  hint?: string;
+function pickCopy(stats: DashboardStats): { title: string; body: string } {
+  const due = stats.dueTodayCount;
+  if (due === 0) {
+    return {
+      title: "All caught up",
+      body: "Nothing is due. Browse decks, or come back tomorrow with fresh ink.",
+    };
+  }
+  if (due <= 5) {
+    return {
+      title: "A short walk today",
+      body: "Just a handful of cards. You can finish before the kettle boils.",
+    };
+  }
+  if (due <= 20) {
+    return {
+      title: "A comfortable pace",
+      body: "Take it one stroke at a time. The brush moves with you.",
+    };
+  }
+  if (stats.accuracy7d >= 0.9) {
+    return {
+      title: "Heavy queue, steady hand",
+      body: "You've been accurate lately — keep that rhythm, you'll be through it.",
+    };
+  }
+  return {
+    title: "A long road today",
+    body: "Don't push for perfect — push for present. One card at a time.",
+  };
 }
-
-const STATS: StatItem[] = [
-  { key: "dueTodayCount", label: "Due today", format: (v) => v.toLocaleString() },
-  { key: "newAvailableCount", label: "New available", format: (v) => v.toLocaleString() },
-  { key: "learnedTotal", label: "Learned total", format: (v) => v.toLocaleString() },
-  { key: "currentStreak", label: "Streak", format: (v) => `${v} day${v === 1 ? "" : "s"}` },
-  {
-    key: "accuracy7d",
-    label: "Accuracy (7d)",
-    format: (v) => `${Math.round(v * 100)}%`,
-    hint: "Ratings ≥ Good in the last 7 days",
-  },
-];
 
 export function DashboardPage() {
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
@@ -38,91 +48,136 @@ export function DashboardPage() {
     queryFn: fetchDashboard,
   });
 
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <HanziLoader size={120} label="Reading the day…" />
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <Card className="max-w-xl mx-auto">
+        <CardContent className="pt-6 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-destructive">Could not load your stats.</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isRefetching}
+          >
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const copy = pickCopy(data);
+  const due = data.dueTodayCount;
+  const accuracyPct = Math.round(data.accuracy7d * 100);
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-background to-background p-6 sm:p-8 shadow-card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-balance">
-            Welcome back
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Your study progress at a glance.
-          </p>
+    <div className="flex flex-col items-center gap-10 py-6 sm:py-10">
+      <header className="flex flex-col items-center gap-3 text-center max-w-xl">
+        <span className="text-xs uppercase tracking-[0.4em] text-ink-soft">
+          今日 — Today
+        </span>
+        <h1 className="font-display font-bold leading-none text-ink text-[16vw] sm:text-[10rem] tabular-nums">
+          {due}
+        </h1>
+        <p className="text-sm text-ink-soft uppercase tracking-widest">
+          {due === 1 ? "card due" : "cards due"}
+        </p>
+      </header>
+
+      <div className="flex flex-col items-center gap-3 text-center max-w-md">
+        <h2 className="font-hanzi text-2xl text-ink">{copy.title}</h2>
+        <p className="text-sm text-ink-soft text-balance">{copy.body}</p>
+      </div>
+
+      <Button
+        asChild
+        size="lg"
+        className="h-14 px-10 text-base shadow-seal"
+        disabled={due === 0}
+      >
+        <Link to="/study">
+          {due === 0 ? "Practice a deck →" : "Start studying →"}
+        </Link>
+      </Button>
+
+      <BrushDivider className="max-w-md" />
+
+      <Ribbon
+        items={[
+          {
+            label: "streak",
+            value: `${data.currentStreak}`,
+            hint: data.currentStreak === 1 ? "day" : "days",
+            tone: data.currentStreak >= 7 ? "seal" : "default",
+          },
+          {
+            label: "accuracy 7d",
+            value: `${accuracyPct}%`,
+            tone: accuracyPct >= 90 ? "success" : "default",
+          },
+          {
+            label: "learned",
+            value: data.learnedTotal.toLocaleString(),
+          },
+          {
+            label: "new available",
+            value: data.newAvailableCount.toLocaleString(),
+          },
+        ]}
+      />
+
+      {data.currentStreak >= 7 ? (
+        <div className="flex items-center gap-2 text-sm text-ink-soft">
+          <Seal size="sm" shape="round" tilt={false}>
+            勤
+          </Seal>
+          Diligent week — keep going.
         </div>
-        <Button
-          asChild
-          size="lg"
-          disabled={isLoading}
-          className="w-full sm:w-auto shrink-0"
-        >
-          <Link to="/study">Start studying →</Link>
-        </Button>
-      </div>
-
-      {isError ? (
-        <Card>
-          <CardContent className="pt-6 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-destructive">
-              Could not load your stats.
-            </p>
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isRefetching}>
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
       ) : null}
-
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {STATS.map((stat) => (
-          <StatCard
-            key={stat.key}
-            label={stat.label}
-            hint={stat.hint}
-            value={data ? stat.format(data[stat.key]) : null}
-            loading={isLoading}
-          />
-        ))}
-      </div>
     </div>
   );
 }
 
-function StatCard({
-  label,
-  hint,
-  value,
-  loading,
-}: {
+type RibbonItem = {
   label: string;
+  value: string;
   hint?: string;
-  value: string | null;
-  loading: boolean;
-}) {
+  tone?: "default" | "success" | "seal";
+};
+
+function Ribbon({ items }: { items: RibbonItem[] }) {
   return (
-    <Card className="hover:shadow-card-hover">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {label}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading || value === null ? (
-          <div
+    <div className="flex flex-wrap items-end justify-center gap-x-8 gap-y-4 max-w-2xl">
+      {items.map((it) => (
+        <div key={it.label} className="flex flex-col items-center min-w-[5rem]">
+          <span
             className={cn(
-              "h-8 w-24 rounded bg-muted animate-pulse",
-              loading ? "" : "opacity-50",
+              "text-3xl font-semibold tabular-nums leading-none",
+              it.tone === "seal" && "text-seal",
+              it.tone === "success" && "text-success",
+              (!it.tone || it.tone === "default") && "text-ink",
             )}
-            aria-hidden
-          />
-        ) : (
-          <p className="text-2xl sm:text-3xl font-semibold tabular-nums truncate">
-            {value}
-          </p>
-        )}
-        {hint ? (
-          <p className="text-xs text-muted-foreground mt-2">{hint}</p>
-        ) : null}
-      </CardContent>
-    </Card>
+          >
+            {it.value}
+            {it.hint ? (
+              <span className="ml-1 text-xs font-normal text-ink-soft">
+                {it.hint}
+              </span>
+            ) : null}
+          </span>
+          <span className="text-[10px] uppercase tracking-widest text-ink-soft mt-1">
+            {it.label}
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }

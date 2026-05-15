@@ -25,12 +25,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { HanziLoader } from "@/components/HanziLoader";
 
 const STATE_COLORS: Record<string, string> = {
-  New: "#94a3b8",
-  Learning: "#f59e0b",
-  Review: "#10b981",
-  Relearning: "#ef4444",
+  New: "hsl(var(--ink-soft))",
+  Learning: "hsl(var(--warning))",
+  Review: "hsl(var(--success))",
+  Relearning: "hsl(var(--destructive))",
 };
 
 const RANGE_OPTIONS: Array<{ label: string; days: number }> = [
@@ -51,7 +52,11 @@ export function StatsPage() {
   });
 
   if (isLoading) {
-    return <div className="h-64 rounded bg-muted animate-pulse max-w-3xl mx-auto" />;
+    return (
+      <div className="min-h-[40vh] flex items-center justify-center">
+        <HanziLoader size={96} label="Brushing your numbers…" />
+      </div>
+    );
   }
   if (isError || !data) {
     return (
@@ -68,8 +73,10 @@ export function StatsPage() {
     <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Statistics</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="font-hanzi text-3xl sm:text-4xl font-bold tracking-tight text-ink">
+            统计 <span className="text-2xl sm:text-3xl">Statistics</span>
+          </h1>
+          <p className="text-sm text-ink-soft mt-1">
             Reviews per day, accuracy trend, and card-state breakdown.
           </p>
         </div>
@@ -121,8 +128,20 @@ function ReviewsPerDayCard({ overview }: { overview: OverviewView }) {
             <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="good" name="Good/Easy" stackId="r" fill="#10b981" />
-            <Bar dataKey="again" name="Again/Hard" stackId="r" fill="#ef4444" />
+            <Bar
+              dataKey="good"
+              name="Good/Easy"
+              stackId="r"
+              fill="hsl(var(--success))"
+              radius={[2, 2, 0, 0]}
+            />
+            <Bar
+              dataKey="again"
+              name="Again/Hard"
+              stackId="r"
+              fill="hsl(var(--destructive))"
+              radius={[2, 2, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -149,7 +168,14 @@ function AccuracyCard({ overview }: { overview: OverviewView }) {
             <XAxis dataKey="date" tick={{ fontSize: 11 }} />
             <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 11 }} />
             <Tooltip formatter={(value) => `${value}%`} />
-            <Line type="monotone" dataKey="accuracy" stroke="#0ea5e9" strokeWidth={2} dot={false} />
+            <Line
+              type="monotone"
+              dataKey="accuracy"
+              stroke="hsl(var(--seal))"
+              strokeWidth={3}
+              strokeLinecap="round"
+              dot={false}
+            />
           </LineChart>
         </ResponsiveContainer>
       </CardContent>
