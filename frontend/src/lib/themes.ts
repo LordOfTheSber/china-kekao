@@ -7,6 +7,10 @@ export type ThemeId =
   | "sakura"
   | "hacker"
   | "arcade"
+  | "anime"
+  | "anime-sky"
+  | "anime-kawaii"
+  | "anime-otome"
   | "custom";
 
 export type ThemeMode = "light" | "dark";
@@ -107,6 +111,42 @@ export const THEMES: Record<Exclude<ThemeId, "custom">, ThemePreset> = {
     swatchInk: "#FFD93D",
     swatchSeal: "#FF3B6A",
   },
+  anime: {
+    id: "anime",
+    label: "ネオン Anime Neo",
+    description: "Cyber anime night city + magenta/cyan glow.",
+    mode: "dark",
+    swatchPaper: "#120A2F",
+    swatchInk: "#F3F3FF",
+    swatchSeal: "#FF4FB3",
+  },
+  "anime-sky": {
+    id: "anime-sky",
+    label: "青春 Anime Sky",
+    description: "Classic anime sky, soft gradients, calm slice-of-life mood.",
+    mode: "light",
+    swatchPaper: "#DCEEFF",
+    swatchInk: "#2D3F68",
+    swatchSeal: "#FF729C",
+  },
+  "anime-kawaii": {
+    id: "anime-kawaii",
+    label: "カワイイ Kawaii",
+    description: "Max anime energy: pastel glow, sparkles, hearts, and starburst accents.",
+    mode: "light",
+    swatchPaper: "#FFE9F5",
+    swatchInk: "#3B2A68",
+    swatchSeal: "#FF4FA3",
+  },
+  "anime-otome": {
+    id: "anime-otome",
+    label: "乙女 Otome",
+    description: "Anime heroine vibes: shōjo sparkles, sakura wind, and poster-style art.",
+    mode: "light",
+    swatchPaper: "#FFE4F3",
+    swatchInk: "#3F2A66",
+    swatchSeal: "#FF4D98",
+  },
 };
 
 export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
@@ -118,6 +158,10 @@ export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
   "sakura",
   "hacker",
   "arcade",
+  "anime",
+  "anime-sky",
+  "anime-kawaii",
+  "anime-otome",
 ];
 
 export const DEFAULT_CUSTOM_TOKENS: ThemeTokens = {

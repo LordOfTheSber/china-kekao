@@ -95,6 +95,15 @@ export function HanziLoader({ size = 96, label, className }: Props) {
       {label ? (
         <span className="text-xs text-ink-soft">{label}</span>
       ) : null}
+
+      {(themeId === "anime" || themeId === "anime-sky" || themeId === "anime-kawaii" || themeId === "anime-otome") ? (
+        <span className="isekai-truck text-[11px]" aria-hidden>
+          <span>🚚</span>
+          <span>✦ portal jump ✦</span>
+          <span>🌀</span>
+        </span>
+      ) : null}
+
     </div>
   );
 }
