@@ -11,6 +11,7 @@ export type ThemeId =
   | "anime-sky"
   | "anime-kawaii"
   | "anime-otome"
+  | "anime-isekai"
   | "custom";
 
 export type ThemeMode = "light" | "dark";
@@ -147,6 +148,15 @@ export const THEMES: Record<Exclude<ThemeId, "custom">, ThemePreset> = {
     swatchInk: "#3F2A66",
     swatchSeal: "#FF4D98",
   },
+  "anime-isekai": {
+    id: "anime-isekai",
+    label: "異世界 Isekai",
+    description: "Аниме-героиня, sakura-неон и truck-kun на горизонте.",
+    mode: "light",
+    swatchPaper: "#FFE3F1",
+    swatchInk: "#241246",
+    swatchSeal: "#FF3D8A",
+  },
 };
 
 export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
@@ -162,6 +172,7 @@ export const THEME_ORDER: Array<Exclude<ThemeId, "custom">> = [
   "anime-sky",
   "anime-kawaii",
   "anime-otome",
+  "anime-isekai",
 ];
 
 export const DEFAULT_CUSTOM_TOKENS: ThemeTokens = {

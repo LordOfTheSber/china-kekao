@@ -329,6 +329,37 @@
     --font-display: "Nunito", "Noto Serif SC", serif;
   }
 
+  [data-theme="anime-isekai"] {
+    --paper: 330 100% 95%;
+    --paper-elevated: 330 100% 98%;
+    --ink: 260 55% 18%;
+    --ink-soft: 260 25% 38%;
+    --seal: 330 95% 62%;
+    --seal-foreground: 0 0% 100%;
+    --brush: 260 40% 30%;
+    --watermark: 200 90% 70%;
+    --success: 156 60% 42%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 100% 58%;
+    --warning-foreground: 260 55% 18%;
+    --secondary: 320 70% 90%;
+    --secondary-foreground: 260 55% 18%;
+    --muted: 325 50% 93%;
+    --muted-foreground: 260 25% 38%;
+    --accent: 200 90% 75%;
+    --accent-foreground: 260 55% 18%;
+    --primary: 330 95% 62%;
+    --primary-foreground: 0 0% 100%;
+    --destructive: 352 82% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 330 60% 80%;
+    --input: 330 60% 80%;
+    --ring: 330 95% 62%;
+    --grain-opacity: 0.05;
+    --brush-radius: 1.5rem;
+    --font-display: "Nunito", "Noto Serif SC", serif;
+  }
+
   [data-theme="hacker"] {
     --paper: 120 20% 5%;
     --paper-elevated: 120 18% 8%;
@@ -471,6 +502,49 @@
 
   [data-theme="anime-otome"] .font-hanzi {
     text-shadow: 0 0 18px hsl(var(--seal) / 0.45), 0 0 26px hsl(var(--accent) / 0.35);
+  }
+
+  /* anime-isekai: poster background + sparkle overlay + truck-kun mascot.
+     Image assets live in /frontend/public/anime-isekai/ — see plan for prompts. */
+  [data-theme="anime-isekai"] body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background-image: url("/anime-isekai/bg-poster.png");
+    background-size: cover;
+    background-position: center;
+    opacity: 0.35;
+  }
+
+  [data-theme="anime-isekai"] body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background-image: url("/anime-isekai/sparkles.png");
+    background-repeat: repeat;
+    background-size: 384px 384px;
+    opacity: 0.4;
+    animation: isekai-sparkle 8s linear infinite;
+  }
+
+  @keyframes isekai-sparkle {
+    from { background-position: 0 0; }
+    to   { background-position: 384px 384px; }
+  }
+
+  [data-theme="anime-isekai"] .font-hanzi {
+    text-shadow: 0 0 18px hsl(var(--seal) / 0.55), 0 0 28px hsl(var(--accent) / 0.4);
+    letter-spacing: 0.02em;
+  }
+
+  [data-theme="anime-isekai"] .isekai-truck img {
+    height: 2.4em;
+    width: auto;
+    filter: drop-shadow(0 0 6px hsl(var(--seal) / 0.5));
   }
 
   [data-theme^="anime"] .isekai-truck {

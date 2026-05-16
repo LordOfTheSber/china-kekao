@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PaperBg } from "@/components/ui/paper-bg";
 import { Seal } from "@/components/ui/seal";
 import { AchievementUnlock } from "@/components/AchievementUnlock";
+import { IsekaiTruck } from "@/components/IsekaiTruck";
 import { PandaEgg } from "@/components/PandaEgg";
 import { useAuthStore } from "@/store/auth";
 import { usePreferencesStore } from "@/store/preferences";
@@ -32,6 +33,7 @@ export function Layout() {
   const clear = useAuthStore((s) => s.clear);
   const hydrate = usePreferencesStore((s) => s.hydrate);
   const setTheme = useThemeStore((s) => s.setTheme);
+  const themeId = useThemeStore((s) => s.themeId);
   const [unlocks, setUnlocks] = useState<AchievementView[]>([]);
   const [pandaOpen, setPandaOpen] = useState(false);
   const logoClicksRef = useRef(0);
@@ -174,6 +176,20 @@ export function Layout() {
       >
         <Outlet />
       </main>
+      {themeId === "anime-isekai" && (
+        <>
+          {/* Hero anime girl — place asset at frontend/public/anime-isekai/hero-girl.png (see plan for prompt). */}
+          <img
+            src="/anime-isekai/hero-girl.png"
+            alt=""
+            aria-hidden
+            className="pointer-events-none fixed bottom-0 right-2 hidden lg:block h-[70vh] opacity-90 z-10 drop-shadow-[0_0_30px_hsl(var(--seal)/0.4)]"
+          />
+          <div className="pointer-events-none fixed bottom-4 left-0 z-10">
+            <IsekaiTruck />
+          </div>
+        </>
+      )}
       <AchievementUnlock unlocks={unlocks} onDone={() => setUnlocks([])} />
       <PandaEgg open={pandaOpen} onClose={() => setPandaOpen(false)} />
     </div>
