@@ -178,9 +178,9 @@ export function Layout() {
       </main>
       {themeId === "anime-isekai" && (
         <>
-          {/* Hero anime girl — place asset at frontend/public/anime-isekai/hero-girl.webp (see plan for prompt). */}
+          {/* Hero anime girl — place asset at frontend/public/anime-isekai/hero-girl.png (see plan for prompt). */}
           <img
-            src="/anime-isekai/hero-girl.webp"
+            src="/anime-isekai/hero-girl.png"
             alt=""
             aria-hidden
             className="pointer-events-none fixed bottom-0 right-2 hidden lg:block h-[70vh] opacity-90 z-10 drop-shadow-[0_0_30px_hsl(var(--seal)/0.4)]"
