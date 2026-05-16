@@ -188,6 +188,13 @@ export function Layout() {
           <div className="pointer-events-none fixed bottom-4 left-0 z-10">
             <IsekaiTruck />
           </div>
+          {/* Decorative stamp — place asset at frontend/public/anime-isekai/seal-stamp.png (see plan for prompt). */}
+          <img
+            src="/anime-isekai/seal-stamp.png"
+            alt=""
+            aria-hidden
+            className="pointer-events-none fixed top-20 right-4 hidden md:block h-24 w-24 opacity-80 -rotate-12 z-10 drop-shadow-[0_0_18px_hsl(var(--seal)/0.5)]"
+          />
         </>
       )}
       <AchievementUnlock unlocks={unlocks} onDone={() => setUnlocks([])} />
