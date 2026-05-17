@@ -506,6 +506,12 @@
 
   /* anime-isekai: poster background + sparkle overlay + truck-kun mascot.
      Image assets live in /frontend/public/anime-isekai/ — see plan for prompts. */
+  [data-theme="anime-isekai"] html {
+    background-color: hsl(var(--paper));
+  }
+  [data-theme="anime-isekai"] body {
+    background-color: transparent;
+  }
   [data-theme="anime-isekai"] body::before {
     content: "";
     position: fixed;
