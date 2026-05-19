@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Date;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -96,36 +97,24 @@ public class StatsService {
         }
         long learnedTotal = userCards.countByUserIdAndState(userId, CardState.REVIEW);
 
-        // Streak window already covers the 7d accuracy window, so a single query is enough.
         Instant streakWindow = now.minus(STREAK_LOOKBACK_DAYS, ChronoUnit.DAYS);
         Instant sevenDaysAgo = now.minus(7, ChronoUnit.DAYS);
-        List<Object[]> rangeLogs = reviewLogs.findUserReviewsSince(userId, streakWindow);
 
-        double accuracy = computeAccuracy(filterSince(rangeLogs, sevenDaysAgo));
-        int streak = computeCurrentStreak(rangeLogs, now);
+        double accuracy = computeAccuracy(reviewLogs.findDailyReviewCounts(userId, sevenDaysAgo));
+        int streak = computeCurrentStreak(reviewLogs.findDistinctReviewDays(userId, streakWindow), now);
 
         return new DashboardView(dueToday, newAvailable, learnedTotal, streak, accuracy);
     }
 
-    private static List<Object[]> filterSince(List<Object[]> logs, Instant since) {
-        if (logs.isEmpty()) return logs;
-        java.util.ArrayList<Object[]> out = new java.util.ArrayList<>();
-        for (Object[] row : logs) {
-            Instant at = (Instant) row[0];
-            if (!at.isBefore(since)) out.add(row);
+    private static double computeAccuracy(List<Object[]> dailyCounts) {
+        if (dailyCounts.isEmpty()) return 0.0;
+        long total = 0;
+        long good = 0;
+        for (Object[] row : dailyCounts) {
+            total += ((Number) row[1]).longValue();
+            good += ((Number) row[2]).longValue();
         }
-        return out;
-    }
-
-    private static double computeAccuracy(List<Object[]> logs) {
-        if (logs.isEmpty()) return 0.0;
-        int total = logs.size();
-        int good = 0;
-        for (Object[] row : logs) {
-            short rating = ((Number) row[1]).shortValue();
-            if (rating >= 3) good++;
-        }
-        return (double) good / total;
+        return total == 0 ? 0.0 : (double) good / total;
     }
 
     /**
@@ -133,12 +122,11 @@ public class StatsService {
      * recorded at least one review. If the user has not reviewed today and not yesterday,
      * the streak is zero.
      */
-    static int computeCurrentStreak(List<Object[]> logs, Instant now) {
-        if (logs.isEmpty()) return 0;
-        Set<LocalDate> reviewDays = new HashSet<>();
-        for (Object[] row : logs) {
-            Instant reviewedAt = (Instant) row[0];
-            reviewDays.add(reviewedAt.atZone(ZoneOffset.UTC).toLocalDate());
+    static int computeCurrentStreak(List<Date> reviewDayRows, Instant now) {
+        if (reviewDayRows.isEmpty()) return 0;
+        Set<LocalDate> reviewDays = new HashSet<>(reviewDayRows.size());
+        for (Date d : reviewDayRows) {
+            reviewDays.add(d.toLocalDate());
         }
         LocalDate today = now.atZone(ZoneOffset.UTC).toLocalDate();
         LocalDate cursor = reviewDays.contains(today) ? today : today.minusDays(1);

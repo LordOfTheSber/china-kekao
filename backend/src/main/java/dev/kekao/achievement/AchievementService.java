@@ -60,16 +60,14 @@ public class AchievementService {
     @Transactional(readOnly = true)
     public AchievementListResponse listForUser(Long userId) {
         List<AchievementEntity> all = achievements.findAllByOrderBySortOrderAsc();
-        Set<Long> unlockedIds = userAchievements.findAchievementIdsForUser(userId);
         List<UserAchievementEntity> unlocked = userAchievements.findUnlockedForUser(userId);
-        // Map achievementId -> unlockedAt
-        java.util.Map<Long, Instant> unlockTimes = new java.util.HashMap<>();
+        java.util.Map<Long, Instant> unlockTimes = new java.util.HashMap<>(unlocked.size());
         for (UserAchievementEntity ua : unlocked) {
             unlockTimes.put(ua.getAchievement().getId(), ua.getUnlockedAt());
         }
         List<AchievementView> views = new ArrayList<>(all.size());
         for (AchievementEntity a : all) {
-            boolean isUnlocked = unlockedIds.contains(a.getId());
+            Instant unlockedAt = unlockTimes.get(a.getId());
             views.add(new AchievementView(
                     a.getCode(),
                     a.getName(),
@@ -78,10 +76,10 @@ public class AchievementService {
                     a.getCategory(),
                     a.getThreshold(),
                     a.getSortOrder(),
-                    isUnlocked,
-                    unlockTimes.get(a.getId())));
+                    unlockedAt != null,
+                    unlockedAt));
         }
-        return new AchievementListResponse(views, unlockedIds.size(), all.size());
+        return new AchievementListResponse(views, unlockTimes.size(), all.size());
     }
 
     /**
@@ -90,15 +88,25 @@ public class AchievementService {
      */
     @Transactional
     public List<AchievementView> checkAfterReview(Long userId) {
-        long learned = userCards.countByUserIdAndState(userId, CardState.REVIEW);
-        long reviewsTotal = reviewLogs.countByUserId(userId);
-        int streak = computeCurrentStreak(userId);
+        List<AchievementEntity> candidates = userAchievements.findLockedThresholdAchievements(userId);
+        if (candidates.isEmpty()) return List.of();
+
+        // Only run the counter queries actually needed for the locked candidates.
+        boolean needLearned = false, needReviews = false, needStreak = false;
+        for (AchievementEntity a : candidates) {
+            switch (a.getCategory()) {
+                case LEARNED -> needLearned = true;
+                case STREAK -> needStreak = true;
+                case REVIEWS -> needReviews = true;
+                case SPECIAL -> { /* not eligible here */ }
+            }
+        }
+        long learned = needLearned ? userCards.countByUserIdAndState(userId, CardState.REVIEW) : 0L;
+        long reviewsTotal = needReviews ? reviewLogs.countByUserId(userId) : 0L;
+        int streak = needStreak ? computeCurrentStreak(userId) : 0;
 
         List<AchievementView> unlocked = new ArrayList<>();
-        Set<Long> already = userAchievements.findAchievementIdsForUser(userId);
-        for (AchievementEntity a : achievements.findAllByOrderBySortOrderAsc()) {
-            if (already.contains(a.getId())) continue;
-            if (a.getThreshold() == null) continue;
+        for (AchievementEntity a : candidates) {
             boolean satisfied = switch (a.getCategory()) {
                 case LEARNED -> learned >= a.getThreshold();
                 case STREAK -> streak >= a.getThreshold();
@@ -190,12 +198,11 @@ public class AchievementService {
     private int computeCurrentStreak(Long userId) {
         Instant now = Instant.now(clock);
         Instant since = now.minus(STREAK_LOOKBACK_DAYS, ChronoUnit.DAYS);
-        List<Object[]> rows = reviewLogs.findUserReviewsSince(userId, since);
+        List<java.sql.Date> rows = reviewLogs.findDistinctReviewDays(userId, since);
         if (rows.isEmpty()) return 0;
-        Set<java.time.LocalDate> days = new HashSet<>();
-        for (Object[] row : rows) {
-            Instant at = (Instant) row[0];
-            days.add(at.atZone(ZoneOffset.UTC).toLocalDate());
+        Set<java.time.LocalDate> days = new HashSet<>(rows.size());
+        for (java.sql.Date d : rows) {
+            days.add(d.toLocalDate());
         }
         java.time.LocalDate today = now.atZone(ZoneOffset.UTC).toLocalDate();
         java.time.LocalDate cursor = days.contains(today) ? today : today.minusDays(1);

@@ -104,10 +104,14 @@ public class HanziService {
     private Map<Long, List<String>> loadMeanings(Collection<HanziEntity> rows) {
         if (rows.isEmpty()) return Map.of();
         List<Long> ids = rows.stream().map(HanziEntity::getId).distinct().toList();
-        return translations.findByHanziIdInAndLanguage(ids, DEFAULT_LANGUAGE).stream()
+        return translations.findMeaningsByHanziIdInAndLanguage(ids, DEFAULT_LANGUAGE).stream()
                 .collect(Collectors.toMap(
-                        t -> t.getHanzi().getId(),
-                        t -> List.copyOf(t.getMeanings()),
+                        row -> (Long) row[0],
+                        row -> {
+                            @SuppressWarnings("unchecked")
+                            List<String> meanings = (List<String>) row[1];
+                            return List.copyOf(meanings);
+                        },
                         (a, b) -> a));
     }
 

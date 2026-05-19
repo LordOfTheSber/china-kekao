@@ -3,7 +3,6 @@ package dev.kekao.study;
 import dev.kekao.achievement.AchievementService;
 import dev.kekao.hanzi.HanziEntity;
 import dev.kekao.hanzi.HanziRepository;
-import dev.kekao.hanzi.HanziTranslationEntity;
 import dev.kekao.hanzi.HanziTranslationRepository;
 import dev.kekao.study.StudyDtos.DistractorsResponse;
 import dev.kekao.study.StudyDtos.ReviewRequest;
@@ -143,10 +142,14 @@ public class StudyController {
                 .distinct()
                 .toList();
         if (hanziIds.isEmpty()) return Map.of();
-        return translations.findByHanziIdInAndLanguage(hanziIds, DEFAULT_LANGUAGE).stream()
+        return translations.findMeaningsByHanziIdInAndLanguage(hanziIds, DEFAULT_LANGUAGE).stream()
                 .collect(Collectors.toMap(
-                        t -> t.getHanzi().getId(),
-                        t -> List.copyOf(t.getMeanings()),
+                        row -> (Long) row[0],
+                        row -> {
+                            @SuppressWarnings("unchecked")
+                            List<String> meanings = (List<String>) row[1];
+                            return List.copyOf(meanings);
+                        },
                         (a, b) -> a));
     }
 
