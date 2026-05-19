@@ -97,7 +97,7 @@ export function Layout() {
   };
 
   return (
-    <div className="min-h-dvh flex flex-col bg-paper text-ink">
+    <div className={`min-h-dvh flex flex-col text-ink ${themeId === "anime-isekai" ? "" : "bg-paper"}`}>
       <PaperBg />
       <header className="sticky top-0 z-30 border-b border-brush/40 bg-paper/85 backdrop-blur supports-[backdrop-filter]:bg-paper/65">
         <div className="container flex h-14 items-center justify-between gap-3">
