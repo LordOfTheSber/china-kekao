@@ -82,6 +82,9 @@ public class JwtConfig {
 
     private static String stripPem(String pem) {
         return pem
+                .replace("\\r\\n", "")
+                .replace("\\n", "")
+                .replace("\\r", "")
                 .replaceAll("-----BEGIN [A-Z ]+-----", "")
                 .replaceAll("-----END [A-Z ]+-----", "")
                 .replaceAll("\\s+", "");
