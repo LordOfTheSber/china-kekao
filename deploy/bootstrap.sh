@@ -47,6 +47,18 @@ die()  { printf '\033[1;31m[fatal]\033[0m %s\n' "$*" >&2; exit 1; }
 # ---------------------------------------------------------------------------
 log "updating apt index"
 export DEBIAN_FRONTEND=noninteractive
+# Silence `needrestart`'s interactive prompts (pending-kernel notice + the
+# "services to restart" checklist that otherwise pauses the script).
+export NEEDRESTART_MODE=a
+export NEEDRESTART_SUSPEND=1
+if [ -d /etc/needrestart/conf.d ]; then
+    cat > /etc/needrestart/conf.d/00-kekao-noninteractive.conf <<'EOF'
+# Managed by deploy/bootstrap.sh — keep apt runs non-interactive.
+$nrconf{restart} = 'a';
+$nrconf{kernelhints} = 0;
+$nrconf{ucodehints} = 0;
+EOF
+fi
 apt-get update -y
 apt-get install -y --no-install-recommends \
     ca-certificates curl gnupg lsb-release git ufw openssl cron awscli
