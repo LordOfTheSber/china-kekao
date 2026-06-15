@@ -24,12 +24,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SchemaMigrationIntegrationTest extends AbstractPostgresIntegrationTest {
 
     private static final List<String> EXPECTED_INDEXES = List.of(
-            "idx_user_card_due",
+            "idx_user_card_user_state_due",
             "idx_hanzi_status_hsk",
             "idx_hanzi_character_trgm",
             "idx_hanzi_pinyin_trgm",
             "idx_review_log_card_time",
-            "idx_review_log_time"
+            "idx_review_log_time",
+            "idx_review_log_user_time"
     );
 
     @Autowired

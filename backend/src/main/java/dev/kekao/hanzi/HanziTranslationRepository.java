@@ -16,17 +16,15 @@ public interface HanziTranslationRepository extends JpaRepository<HanziTranslati
     List<HanziTranslationEntity> findByHanziId(@Param("hanziId") Long hanziId);
 
     /**
-     * Returns translations for the given hanzi ids and language. Uses a JOIN FETCH on the
-     * {@code hanzi} association so callers iterating the result and reading {@code getHanzi().getId()}
-     * do not trigger an extra query per row (N+1).
+     * Projection returning (hanziId, meanings) rows directly so callers building a map by hanzi id
+     * do not need to materialise translation entities (or their associated hanzi row).
      */
     @Query("""
-            SELECT ht FROM HanziTranslationEntity ht
-            JOIN FETCH ht.hanzi
+            SELECT ht.hanzi.id, ht.meanings FROM HanziTranslationEntity ht
             WHERE ht.hanzi.id IN :hanziIds AND ht.language = :language
             """)
-    List<HanziTranslationEntity> findByHanziIdInAndLanguage(@Param("hanziIds") Collection<Long> hanziIds,
-                                                            @Param("language") String language);
+    List<Object[]> findMeaningsByHanziIdInAndLanguage(@Param("hanziIds") Collection<Long> hanziIds,
+                                                     @Param("language") String language);
 
     @Query("""
             SELECT ht.meanings FROM HanziTranslationEntity ht

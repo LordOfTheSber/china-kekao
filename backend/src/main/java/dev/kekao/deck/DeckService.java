@@ -9,7 +9,6 @@ import dev.kekao.deck.DeckDtos.UpdateDeckRequest;
 import dev.kekao.hanzi.HanziEntity;
 import dev.kekao.hanzi.HanziRepository;
 import dev.kekao.hanzi.HanziStatus;
-import dev.kekao.hanzi.HanziTranslationEntity;
 import dev.kekao.hanzi.HanziTranslationRepository;
 import dev.kekao.study.CardState;
 import dev.kekao.study.StudyMode;
@@ -62,12 +61,9 @@ public class DeckService {
 
     @Transactional(readOnly = true)
     public List<DeckView> listDecks(Long userId) {
-        Set<Long> subscribed = new HashSet<>(userDecks.findDeckIdsByUserId(userId));
-
-        List<DeckEntity> all = new ArrayList<>(decks.findAllBySystemTrueOrderByIdAsc());
-        all.addAll(decks.findAllByOwnerIdOrderByIdAsc(userId));
-
+        List<DeckEntity> all = decks.findVisibleForUser(userId);
         if (all.isEmpty()) return List.of();
+        Set<Long> subscribed = new HashSet<>(userDecks.findDeckIdsByUserId(userId));
         List<Long> deckIds = all.stream().map(DeckEntity::getId).toList();
         Map<Long, Long> countByDeck = new HashMap<>();
         for (Object[] row : deckHanzi.countsByDeckIds(deckIds)) {
@@ -345,18 +341,20 @@ public class DeckService {
     private String uniqueSlugForOwner(Long ownerId, String name, Long excludeDeckId) {
         String base = slugify(name);
         if (base.isEmpty()) base = "deck";
-        String candidate = base;
-        int suffix = 2;
-        while (true) {
-            var existing = decks.findBySlugAndOwnerId(candidate, ownerId);
-            if (existing.isEmpty() || (excludeDeckId != null && existing.get().getId().equals(excludeDeckId))) {
-                return candidate;
-            }
-            candidate = base + "-" + suffix++;
-            if (suffix > 1000) {
-                throw new IllegalStateException("Could not allocate unique slug for deck name: " + name);
-            }
+
+        // Single DB hit: load every slug that could collide. If the exclude id is set, we still
+        // need to know whether the matching slug is the deck being renamed, so look it up once.
+        Set<String> taken = new HashSet<>(decks.findSlugsByOwnerIdStartingWith(ownerId, base + "%"));
+        if (excludeDeckId != null) {
+            decks.findById(excludeDeckId).ifPresent(d -> taken.remove(d.getSlug()));
         }
+
+        if (!taken.contains(base)) return base;
+        for (int suffix = 2; suffix <= 1000; suffix++) {
+            String candidate = base + "-" + suffix;
+            if (!taken.contains(candidate)) return candidate;
+        }
+        throw new IllegalStateException("Could not allocate unique slug for deck name: " + name);
     }
 
     private static String slugify(String value) {
@@ -388,9 +386,12 @@ public class DeckService {
 
     private Map<Long, List<String>> loadEnglishMeanings(List<Long> hanziIds) {
         if (hanziIds.isEmpty()) return Collections.emptyMap();
-        Map<Long, List<String>> out = new HashMap<>();
-        for (HanziTranslationEntity t : translations.findByHanziIdInAndLanguage(hanziIds, "en")) {
-            out.put(t.getHanzi().getId(), t.getMeanings());
+        List<Object[]> rows = translations.findMeaningsByHanziIdInAndLanguage(hanziIds, "en");
+        Map<Long, List<String>> out = new HashMap<>(rows.size());
+        for (Object[] row : rows) {
+            @SuppressWarnings("unchecked")
+            List<String> meanings = (List<String>) row[1];
+            out.put((Long) row[0], meanings);
         }
         return out;
     }

@@ -18,5 +18,21 @@ public interface UserAchievementRepository extends JpaRepository<UserAchievement
             + "ORDER BY ua.unlockedAt DESC")
     List<UserAchievementEntity> findUnlockedForUser(@Param("userId") Long userId);
 
+    /**
+     * Locked threshold-based achievements for the given user, ordered for stable evaluation.
+     * Filters in SQL so {@code checkAfterReview} can skip the full catalog scan + in-memory filter.
+     */
+    @Query("""
+            SELECT a FROM AchievementEntity a
+            WHERE a.threshold IS NOT NULL
+              AND a.category <> dev.kekao.achievement.AchievementCategory.SPECIAL
+              AND NOT EXISTS (
+                  SELECT 1 FROM UserAchievementEntity ua
+                  WHERE ua.achievement.id = a.id AND ua.user.id = :userId
+              )
+            ORDER BY a.sortOrder ASC
+            """)
+    List<AchievementEntity> findLockedThresholdAchievements(@Param("userId") Long userId);
+
     boolean existsByUserIdAndAchievementId(Long userId, Long achievementId);
 }

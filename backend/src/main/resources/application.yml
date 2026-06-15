@@ -8,9 +8,12 @@ spring:
     username: ${DB_USERNAME:kekao}
     password: ${DB_PASSWORD:kekao}
     hikari:
-      maximum-pool-size: ${DB_POOL_MAX:10}
-      minimum-idle: ${DB_POOL_MIN:2}
+      maximum-pool-size: ${DB_POOL_MAX:20}
+      minimum-idle: ${DB_POOL_MIN:5}
       connection-timeout: 5000
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      leak-detection-threshold: 20000
   jpa:
     hibernate:
       ddl-auto: validate
@@ -19,6 +22,7 @@ spring:
       hibernate.jdbc.batch_size: 30
       hibernate.order_inserts: true
       hibernate.order_updates: true
+      hibernate.query.in_clause_parameter_padding: true
   flyway:
     enabled: true
     baseline-on-migrate: false

@@ -210,6 +210,7 @@ class EntityCrudIntegrationTest extends AbstractPostgresIntegrationTest {
     private ReviewLogEntity buildReviewLog(UserCardEntity card) {
         return ReviewLogEntity.builder()
                 .userCard(card)
+                .user(card.getUser())
                 .rating((short) 3)
                 .stateBefore(CardState.NEW)
                 .elapsedDays(0).scheduledDays(1)

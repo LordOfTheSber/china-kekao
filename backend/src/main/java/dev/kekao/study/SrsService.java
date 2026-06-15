@@ -114,6 +114,7 @@ public class SrsService {
         SrsReviewMetadata safeMetadata = metadata == null ? SrsReviewMetadata.empty() : metadata;
         ReviewLogEntity log = ReviewLogEntity.builder()
                 .userCard(card)
+                .user(card.getUser())
                 .rating((short) rating.value())
                 .stateBefore(CardState.valueOf(state.state().name()))
                 .elapsedDays(result.elapsedDays())

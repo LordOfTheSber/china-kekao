@@ -223,6 +223,7 @@ class StatsControllerIntegrationTest extends AbstractPostgresIntegrationTest {
     private void saveReviewLog(UserCardEntity card, short rating, Instant when) {
         reviewLogs.save(ReviewLogEntity.builder()
                 .userCard(card)
+                .user(card.getUser())
                 .rating(rating)
                 .stateBefore(CardState.REVIEW)
                 .elapsedDays(0)
