@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", end: true },
   { to: "/study", label: "Study" },
+  { to: "/write", label: "Write" },
   { to: "/decks", label: "Decks" },
   { to: "/search", label: "Search" },
   { to: "/stats", label: "Stats" },

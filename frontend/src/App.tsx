@@ -7,6 +7,7 @@ import { LoginPage } from "@/pages/Login";
 import { RegisterPage } from "@/pages/Register";
 import { DashboardPage } from "@/pages/Dashboard";
 import { StudyPage } from "@/pages/Study";
+import { WritingPage } from "@/pages/Writing";
 import { DecksPage } from "@/pages/Decks";
 import { DeckEditPage } from "@/pages/DeckEdit";
 import { HanziDetailPage } from "@/pages/HanziDetail";
@@ -35,6 +36,14 @@ export function App() {
           element={
             <ProtectedRoute>
               <StudyPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/write"
+          element={
+            <ProtectedRoute>
+              <WritingPage />
             </ProtectedRoute>
           }
         />
