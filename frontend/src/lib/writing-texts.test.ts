@@ -55,11 +55,11 @@ describe("WRITING_LESSONS dataset", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("every text has pinyin, english and at least one writable glyph", () => {
+  it("every curated text has pinyin, english and at least one writable glyph", () => {
     for (const lesson of WRITING_LESSONS) {
       for (const text of lesson.texts) {
-        expect(text.pinyin.trim().length).toBeGreaterThan(0);
-        expect(text.english.trim().length).toBeGreaterThan(0);
+        expect(text.pinyin?.trim().length ?? 0).toBeGreaterThan(0);
+        expect(text.english?.trim().length ?? 0).toBeGreaterThan(0);
         expect(writableChars(text.hanzi).length).toBeGreaterThan(0);
       }
     }

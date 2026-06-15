@@ -5,12 +5,16 @@
 // reliably ships stroke data for every glyph used here.
 
 export interface WritingText {
-  /** The Chinese text to write (single character, word, or short phrase). */
+  /** The Chinese text to write (single character, word, phrase, or sentence). */
   hanzi: string;
-  /** Pinyin reading with tone marks, syllables separated by spaces. */
-  pinyin: string;
-  /** English translation shown as the prompt. */
-  english: string;
+  /**
+   * Pinyin reading with tone marks, syllables separated by spaces. Optional:
+   * curated lessons provide it; long-form corpus texts (e.g. a novel chapter)
+   * are written from the characters alone.
+   */
+  pinyin?: string;
+  /** English translation shown as the prompt. Optional for corpus texts. */
+  english?: string;
 }
 
 export interface WritingLesson {

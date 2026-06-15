@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 import { HanziDrawingPad, type DrawingResult } from "@/components/HanziDrawingPad";
+import { HanziLoader } from "@/components/HanziLoader";
 import { BrushDivider } from "@/components/ui/brush-divider";
 import { Seal } from "@/components/ui/seal";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,11 @@ import {
   type WritingLesson,
   type WritingText,
 } from "@/lib/writing-texts";
+import {
+  fetchChapterLesson,
+  fetchChapterManifest,
+  type ChapterMeta,
+} from "@/lib/three-kingdoms";
 
 type InputMethod = "DRAW" | "TYPE";
 
@@ -33,20 +40,28 @@ interface RunnerStats {
 
 export function WritingPage() {
   const [lesson, setLesson] = useState<WritingLesson | null>(null);
+  const [browsingNovel, setBrowsingNovel] = useState(false);
 
-  if (!lesson) {
-    return <LessonPicker onPick={setLesson} />;
+  if (lesson) {
+    return (
+      <LessonRunner key={lesson.id} lesson={lesson} onExit={() => setLesson(null)} />
+    );
+  }
+  if (browsingNovel) {
+    return <ChapterPicker onPick={setLesson} onBack={() => setBrowsingNovel(false)} />;
   }
   return (
-    <LessonRunner
-      key={lesson.id}
-      lesson={lesson}
-      onExit={() => setLesson(null)}
-    />
+    <LessonPicker onPick={setLesson} onOpenNovel={() => setBrowsingNovel(true)} />
   );
 }
 
-function LessonPicker({ onPick }: { onPick: (lesson: WritingLesson) => void }) {
+function LessonPicker({
+  onPick,
+  onOpenNovel,
+}: {
+  onPick: (lesson: WritingLesson) => void;
+  onOpenNovel: () => void;
+}) {
   return (
     <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full">
       <div className="flex flex-col gap-1">
@@ -54,15 +69,108 @@ function LessonPicker({ onPick }: { onPick: (lesson: WritingLesson) => void }) {
         <p className="text-sm text-ink-soft">
           Pick a set of texts — from everyday phrases to lines from classic works like
           Romance of the Three Kingdoms — and reproduce each one. Trace it stroke by
-          stroke, or type the characters from your keyboard. The English translation and
-          pinyin are always shown as your prompt.
+          stroke, or type the characters from your keyboard. Curated lessons show the
+          English translation and pinyin as your prompt.
         </p>
       </div>
+      <NovelCard onOpen={onOpenNovel} />
       <div className="grid gap-4 sm:grid-cols-2">
         {WRITING_LESSONS.map((lesson) => (
           <LessonCard key={lesson.id} lesson={lesson} onPick={onPick} />
         ))}
       </div>
+    </div>
+  );
+}
+
+function NovelCard({ onOpen }: { onOpen: () => void }) {
+  return (
+    <Card className="bg-paper-elevated">
+      <CardHeader>
+        <div className="flex items-start justify-between gap-3">
+          <CardTitle className="text-lg font-hanzi">三国演义 · Romance of the Three Kingdoms</CardTitle>
+          <span className="shrink-0 text-[10px] uppercase tracking-wider rounded-full bg-seal/15 text-seal px-2 py-0.5">
+            Full text
+          </span>
+        </div>
+        <CardDescription>
+          The complete classical novel, all 120 chapters. Copy it sentence by sentence —
+          best practised in Type mode.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button onClick={onOpen}>Browse chapters</Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ChapterPicker({
+  onPick,
+  onBack,
+}: {
+  onPick: (lesson: WritingLesson) => void;
+  onBack: () => void;
+}) {
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["three-kingdoms-manifest"],
+    queryFn: fetchChapterManifest,
+    staleTime: 60 * 60 * 1000,
+  });
+  const [loadingChapter, setLoadingChapter] = useState<number | null>(null);
+
+  async function openChapter(meta: ChapterMeta) {
+    setLoadingChapter(meta.chapter);
+    try {
+      onPick(await fetchChapterLesson(meta));
+    } finally {
+      setLoadingChapter(null);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold text-ink font-hanzi">三国演义</h1>
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          Back
+        </Button>
+      </div>
+      {isLoading ? (
+        <div className="min-h-[40vh] flex items-center justify-center">
+          <HanziLoader size={96} label="Loading chapters…" />
+        </div>
+      ) : isError || !data ? (
+        <Card>
+          <CardContent className="pt-6 flex items-center justify-between">
+            <p className="text-sm text-destructive">Could not load the chapter list.</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {data.map((meta) => (
+            <button
+              key={meta.chapter}
+              type="button"
+              onClick={() => openChapter(meta)}
+              disabled={loadingChapter !== null}
+              className={cn(
+                "text-left rounded-brush border border-brush/30 bg-paper-elevated px-4 py-3",
+                "transition-colors hover:border-seal/50 disabled:opacity-50",
+              )}
+            >
+              <div className="text-xs text-muted-foreground">
+                Chapter {meta.chapter} · {meta.sentences} sentences
+                {loadingChapter === meta.chapter ? " · loading…" : ""}
+              </div>
+              <div className="font-hanzi text-sm text-ink leading-snug line-clamp-2">
+                {meta.title}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -293,7 +401,9 @@ function TypeRunner({
       counterLabel={`text ${textIndex + 1} of ${total}`}
       progress={progress}
     >
-      <TextPrompt text={text} hideHanzi={status !== "WRONG"} />
+      {/* When there's an English prompt to recall from, hide the answer until checked.
+          Corpus texts (no translation) are copy practice, so always show them. */}
+      <TextPrompt text={text} hideHanzi={Boolean(text.english) && status !== "WRONG"} />
       <TypeAnswer
         value={value}
         status={status}
@@ -482,8 +592,12 @@ function TextPrompt({
   const cells = useMemo(() => toPromptCells(text.hanzi), [text]);
   return (
     <div className="flex flex-col items-center gap-2 text-center">
-      <div className="text-2xl font-medium text-ink">{text.english}</div>
-      <div className="text-sm text-muted-foreground">{text.pinyin}</div>
+      {text.english ? (
+        <div className="text-2xl font-medium text-ink">{text.english}</div>
+      ) : null}
+      {text.pinyin ? (
+        <div className="text-sm text-muted-foreground">{text.pinyin}</div>
+      ) : null}
       {hideHanzi ? null : (
         <div className="flex flex-wrap justify-center gap-1 mt-1" lang="zh-Hans" aria-hidden>
           {cells.map((cell, index) => (

@@ -21,6 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -75,8 +77,24 @@ public class HanziImportService {
     @Transactional
     public ImportReport runImport() throws IOException {
         Map<String, Integer> hskMap = loadHskMap();
-        Map<String, CedictEntry> cedictBySimplified = loadCedictIndex(hskMap.keySet());
-        return importCharacters(hskMap, cedictBySimplified);
+        Set<String> corpusChars = loadCorpusChars();
+        Set<String> wanted = new HashSet<>(hskMap.keySet());
+        wanted.addAll(corpusChars);
+        Map<String, CedictEntry> cedictBySimplified = loadCedictIndex(wanted);
+        ImportReport hskReport = importCharacters(hskMap, cedictBySimplified);
+        ImportReport corpusReport = importCorpus(corpusChars, hskMap.keySet(), cedictBySimplified);
+        return hskReport.merge(corpusReport);
+    }
+
+    private Set<String> loadCorpusChars() throws IOException {
+        Set<String> chars = new LinkedHashSet<>();
+        for (String resource : props.corpusListResources()) {
+            chars.addAll(hskLoader.loadCharacters(resource));
+        }
+        if (!chars.isEmpty()) {
+            log.info("Loaded {} corpus characters from {}", chars.size(), props.corpusListResources());
+        }
+        return chars;
     }
 
     private Map<String, Integer> loadHskMap() throws IOException {
@@ -100,23 +118,43 @@ public class HanziImportService {
     }
 
     private Map<String, CedictEntry> loadCedictIndex(Set<String> wantedChars) throws IOException {
+        Map<String, CedictEntry> index = new HashMap<>();
         try (Reader reader = openCedict()) {
-            Map<String, CedictEntry> index = new HashMap<>();
-            for (CedictEntry entry : parser.parse(reader)) {
-                if (entry.simplified().codePointCount(0, entry.simplified().length()) != 1) {
-                    continue;
-                }
-                if (!wantedChars.contains(entry.simplified())) {
-                    continue;
-                }
-                CedictEntry existing = index.get(entry.simplified());
-                if (existing == null || existing.meanings().isEmpty()) {
-                    index.put(entry.simplified(), entry);
-                }
-            }
-            log.info("Indexed {} CC-CEDICT entries matching the HSK list", index.size());
-            return index;
+            indexCedict(reader, wantedChars, index);
         }
+        for (String resource : props.extraCedictResources()) {
+            try (Reader reader = openClasspathReader(resource)) {
+                indexCedict(reader, wantedChars, index);
+            }
+        }
+        log.info("Indexed {} CC-CEDICT entries matching the wanted characters", index.size());
+        return index;
+    }
+
+    private void indexCedict(Reader reader, Set<String> wantedChars,
+                             Map<String, CedictEntry> index) throws IOException {
+        for (CedictEntry entry : parser.parse(reader)) {
+            if (entry.simplified().codePointCount(0, entry.simplified().length()) != 1) {
+                continue;
+            }
+            if (!wantedChars.contains(entry.simplified())) {
+                continue;
+            }
+            CedictEntry existing = index.get(entry.simplified());
+            if (existing == null || existing.meanings().isEmpty()) {
+                index.put(entry.simplified(), entry);
+            }
+        }
+    }
+
+    private Reader openClasspathReader(String resource) throws IOException {
+        var classpathResource = new PathMatchingResourcePatternResolver()
+                .getResource("classpath:" + resource);
+        if (!classpathResource.exists()) {
+            throw new IOException("CC-CEDICT resource not found: " + resource);
+        }
+        return new BufferedReader(new InputStreamReader(
+                classpathResource.getInputStream(), StandardCharsets.UTF_8));
     }
 
     private Reader openCedict() throws IOException {
@@ -152,7 +190,7 @@ public class HanziImportService {
                             "No CC-CEDICT entry for HSK character: " + character);
                 }
             }
-            ImportOutcome outcome = upsertCharacter(character, hskLevel, cedict);
+            ImportOutcome outcome = upsertCharacter(character, hskLevel, cedict, true);
             switch (outcome) {
                 case CREATED -> created++;
                 case UPDATED -> updated++;
@@ -164,18 +202,48 @@ public class HanziImportService {
         return new ImportReport(created, updated, skipped, List.copyOf(missing));
     }
 
-    private ImportOutcome upsertCharacter(String character, int hskLevel, CedictEntry cedict) {
+    private ImportReport importCorpus(Set<String> corpusChars, Set<String> hskChars,
+                                      Map<String, CedictEntry> cedictBySimplified) {
+        if (corpusChars.isEmpty()) {
+            return ImportReport.empty();
+        }
+        int created = 0;
+        int updated = 0;
+        int skipped = 0;
+        List<String> missing = new ArrayList<>();
+        for (String character : corpusChars) {
+            if (hskChars.contains(character)) {
+                skipped++;
+                continue;
+            }
+            CedictEntry cedict = cedictBySimplified.get(character);
+            if (cedict == null) {
+                missing.add(character);
+            }
+            switch (upsertCharacter(character, null, cedict, false)) {
+                case CREATED -> created++;
+                case UPDATED -> updated++;
+                case SKIPPED -> skipped++;
+            }
+        }
+        log.info("Corpus import done: created={}, updated={}, skipped={}, missingCedict={}",
+                created, updated, skipped, missing.size());
+        return new ImportReport(created, updated, skipped, List.copyOf(missing));
+    }
+
+    private ImportOutcome upsertCharacter(String character, Integer hskLevel,
+                                          CedictEntry cedict, boolean allowPublish) {
         Optional<HanziEntity> existing = hanzi.findByCharacter(character);
         if (existing.isPresent()) {
-            return refreshDraft(existing.get(), hskLevel, cedict);
+            return refreshDraft(existing.get(), hskLevel, cedict, allowPublish);
         }
-        boolean complete = cedict != null
+        boolean complete = allowPublish && cedict != null
                 && cedict.pinyin() != null && !cedict.pinyin().isBlank()
                 && !cedict.meanings().isEmpty();
         HanziEntity created = hanzi.save(HanziEntity.builder()
                 .character(character)
                 .pinyin(cedict != null ? cedict.pinyin() : "")
-                .hskLevel((short) hskLevel)
+                .hskLevel(hskLevel == null ? null : (short) (int) hskLevel)
                 .status(complete ? HanziStatus.PUBLISHED : HanziStatus.DRAFT)
                 .build());
         if (cedict != null && !cedict.meanings().isEmpty()) {
@@ -184,29 +252,46 @@ public class HanziImportService {
         return ImportOutcome.CREATED;
     }
 
-    private ImportOutcome refreshDraft(HanziEntity entity, int hskLevel, CedictEntry cedict) {
+    private ImportOutcome refreshDraft(HanziEntity entity, Integer hskLevel,
+                                       CedictEntry cedict, boolean allowPublish) {
         if (entity.getStatus() != HanziStatus.DRAFT) {
             return ImportOutcome.SKIPPED;
         }
-        boolean changed = false;
-        if (entity.getHskLevel() == null || entity.getHskLevel() != hskLevel) {
-            entity.setHskLevel((short) hskLevel);
-            changed = true;
-        }
-        if (cedict != null && (entity.getPinyin() == null || entity.getPinyin().isBlank())) {
-            entity.setPinyin(cedict.pinyin());
-            changed = true;
-        }
-        if (cedict != null && !cedict.meanings().isEmpty()
-                && translations.findByHanziId(entity.getId()).isEmpty()) {
-            translations.save(buildTranslation(entity, cedict));
-            changed = true;
-        }
-        if (entity.getStatus() == HanziStatus.DRAFT && hasCompletePayload(entity)) {
+        boolean changed = updateLevel(entity, hskLevel) | updatePinyin(entity, cedict)
+                | attachTranslation(entity, cedict);
+        if (allowPublish && hasCompletePayload(entity)) {
             entity.setStatus(HanziStatus.PUBLISHED);
             changed = true;
         }
         return changed ? ImportOutcome.UPDATED : ImportOutcome.SKIPPED;
+    }
+
+    private boolean updateLevel(HanziEntity entity, Integer hskLevel) {
+        if (hskLevel == null) {
+            return false;
+        }
+        if (entity.getHskLevel() == null || entity.getHskLevel() != hskLevel.shortValue()) {
+            entity.setHskLevel((short) (int) hskLevel);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean updatePinyin(HanziEntity entity, CedictEntry cedict) {
+        if (cedict == null || (entity.getPinyin() != null && !entity.getPinyin().isBlank())) {
+            return false;
+        }
+        entity.setPinyin(cedict.pinyin());
+        return true;
+    }
+
+    private boolean attachTranslation(HanziEntity entity, CedictEntry cedict) {
+        if (cedict == null || cedict.meanings().isEmpty()
+                || !translations.findByHanziId(entity.getId()).isEmpty()) {
+            return false;
+        }
+        translations.save(buildTranslation(entity, cedict));
+        return true;
     }
 
     private boolean hasCompletePayload(HanziEntity entity) {
@@ -233,5 +318,19 @@ public class HanziImportService {
     private enum ImportOutcome { CREATED, UPDATED, SKIPPED }
 
     public record ImportReport(int created, int updated, int skipped, List<String> missingCedict) {
+
+        static ImportReport empty() {
+            return new ImportReport(0, 0, 0, List.of());
+        }
+
+        ImportReport merge(ImportReport other) {
+            List<String> combinedMissing = new ArrayList<>(missingCedict);
+            combinedMissing.addAll(other.missingCedict);
+            return new ImportReport(
+                    created + other.created,
+                    updated + other.updated,
+                    skipped + other.skipped,
+                    List.copyOf(combinedMissing));
+        }
     }
 }

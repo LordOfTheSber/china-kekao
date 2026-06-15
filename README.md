@@ -88,6 +88,38 @@ The script is idempotent and only writes the four files above. For
 production deployments you can point `KEKAO_IMPORT_CEDICT_PATH` at the
 full CC-CEDICT dump instead of the bundled subset.
 
+## Classical-text writing practice (Three Kingdoms)
+
+The frontend `/write` page can practise the full text of *Romance of the
+Three Kingdoms* (《三国演义》), loaded one chapter at a time from
+`frontend/public/three-kingdoms/`. To (re)generate that content and refresh
+the backend character-import resources from the upstream text:
+
+```bash
+node scripts/import-data/build-three-kingdoms.mjs
+```
+
+This writes the 120 per-chapter JSON files + a manifest for the reader, and
+regenerates two backend import resources:
+
+- `imports/three-kingdoms.txt` — every character in the novel that is **not**
+  already covered by HSK 1–3 (one per line);
+- `imports/three-kingdoms.cedict.txt` — the matching CC-CEDICT slice
+  (pinyin + English meanings).
+
+`scripts/import-data/import-corpus.mjs` is the reusable, novel-agnostic
+importer behind it (`--source <url|path> --name <slug>`).
+
+To load those missing characters into the `hanzi` table, run the importer
+with the corpus resources enabled (they are imported with **no HSK level**,
+in `DRAFT` status, ready for editorial review):
+
+```bash
+KEKAO_IMPORT_CORPUS_RESOURCES=imports/three-kingdoms.txt \
+KEKAO_IMPORT_EXTRA_CEDICT=imports/three-kingdoms.cedict.txt \
+mvn spring-boot:run -Dspring-boot.run.profiles=import
+```
+
 ## Profiles
 
 `SPRING_PROFILES_ACTIVE` selects between:
