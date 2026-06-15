@@ -130,6 +130,79 @@ export const WRITING_LESSONS: WritingLesson[] = [
       { hanzi: "我学习中文已经一年了。", pinyin: "wǒ xué xí zhōng wén yǐ jīng yì nián le.", english: "I have been studying Chinese for a year." },
     ],
   },
+  {
+    id: "three-kingdoms",
+    title: "Romance of the Three Kingdoms",
+    description: "Lines from the opening of 《三国演义》 and its prologue poem.",
+    level: 3,
+    texts: [
+      {
+        hanzi: "话说天下大势，分久必合，合久必分。",
+        pinyin: "huà shuō tiān xià dà shì, fēn jiǔ bì hé, hé jiǔ bì fēn.",
+        english: "The empire, long divided, must unite; long united, must divide.",
+      },
+      {
+        hanzi: "滚滚长江东逝水，浪花淘尽英雄。",
+        pinyin: "gǔn gǔn cháng jiāng dōng shì shuǐ, làng huā táo jìn yīng xióng.",
+        english: "The mighty Yangtze flows ever eastward; its waves wash away all heroes.",
+      },
+      {
+        hanzi: "是非成败转头空。",
+        pinyin: "shì fēi chéng bài zhuǎn tóu kōng.",
+        english: "Right and wrong, triumph and defeat — all turn to nothing in a moment.",
+      },
+      {
+        hanzi: "青山依旧在，几度夕阳红。",
+        pinyin: "qīng shān yī jiù zài, jǐ dù xī yáng hóng.",
+        english: "The green hills remain; how often has the setting sun glowed red.",
+      },
+    ],
+  },
+  {
+    id: "sayings-of-the-sages",
+    title: "Sayings of the Sages",
+    description: "Famous lines from the Analects 《论语》 and the Tao Te Ching 《道德经》.",
+    level: 3,
+    texts: [
+      {
+        hanzi: "学而时习之，不亦说乎？",
+        pinyin: "xué ér shí xí zhī, bù yì yuè hū?",
+        english: "To learn and practise in due time — is that not a pleasure?",
+      },
+      {
+        hanzi: "有朋自远方来，不亦乐乎？",
+        pinyin: "yǒu péng zì yuǎn fāng lái, bù yì lè hū?",
+        english: "To have friends come from afar — is that not a joy?",
+      },
+      {
+        hanzi: "三人行，必有我师焉。",
+        pinyin: "sān rén xíng, bì yǒu wǒ shī yān.",
+        english: "Among any three people walking, one can surely be my teacher.",
+      },
+      {
+        hanzi: "道可道，非常道。",
+        pinyin: "dào kě dào, fēi cháng dào.",
+        english: "The Tao that can be spoken is not the eternal Tao.",
+      },
+      {
+        hanzi: "千里之行，始于足下。",
+        pinyin: "qiān lǐ zhī xíng, shǐ yú zú xià.",
+        english: "A journey of a thousand miles begins with a single step.",
+      },
+    ],
+  },
+  {
+    id: "tang-poems",
+    title: "Tang Poetry — Li Bai",
+    description: "“Quiet Night Thoughts” 《静夜思》, one of the best-loved Tang poems.",
+    level: 3,
+    texts: [
+      { hanzi: "床前明月光，", pinyin: "chuáng qián míng yuè guāng,", english: "Before my bed, the bright moonlight," },
+      { hanzi: "疑是地上霜。", pinyin: "yí shì dì shàng shuāng.", english: "I wonder if it is frost upon the ground." },
+      { hanzi: "举头望明月，", pinyin: "jǔ tóu wàng míng yuè,", english: "I raise my head and gaze at the bright moon," },
+      { hanzi: "低头思故乡。", pinyin: "dī tóu sī gù xiāng.", english: "I lower my head and think of my homeland." },
+    ],
+  },
 ];
 
 export function findLesson(id: string | null | undefined): WritingLesson | undefined {

@@ -52,9 +52,10 @@ function LessonPicker({ onPick }: { onPick: (lesson: WritingLesson) => void }) {
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold text-ink">Writing practice</h1>
         <p className="text-sm text-ink-soft">
-          Pick a set of texts and reproduce each one — trace it stroke by stroke, or
-          type the characters from your keyboard. The English translation and pinyin
-          are always shown as your prompt.
+          Pick a set of texts — from everyday phrases to lines from classic works like
+          Romance of the Three Kingdoms — and reproduce each one. Trace it stroke by
+          stroke, or type the characters from your keyboard. The English translation and
+          pinyin are always shown as your prompt.
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
