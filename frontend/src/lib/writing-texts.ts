@@ -103,6 +103,33 @@ export const WRITING_LESSONS: WritingLesson[] = [
       { hanzi: "我喜欢学中文", pinyin: "wǒ xǐ huan xué zhōng wén", english: "I like learning Chinese" },
     ],
   },
+  {
+    id: "short-sentences",
+    title: "Short Sentences",
+    description: "Complete sentences with punctuation — write them out in full.",
+    level: 2,
+    texts: [
+      { hanzi: "我是学生。", pinyin: "wǒ shì xué sheng.", english: "I am a student." },
+      { hanzi: "他是我的朋友。", pinyin: "tā shì wǒ de péng you.", english: "He is my friend." },
+      { hanzi: "今天天气很好。", pinyin: "jīn tiān tiān qì hěn hǎo.", english: "The weather is nice today." },
+      { hanzi: "这是我的家。", pinyin: "zhè shì wǒ de jiā.", english: "This is my home." },
+      { hanzi: "我喜欢喝茶。", pinyin: "wǒ xǐ huan hē chá.", english: "I like drinking tea." },
+      { hanzi: "你想吃什么？", pinyin: "nǐ xiǎng chī shén me?", english: "What do you want to eat?" },
+    ],
+  },
+  {
+    id: "daily-sentences",
+    title: "Everyday Sentences",
+    description: "Longer sentences you might say on an ordinary day.",
+    level: 3,
+    texts: [
+      { hanzi: "我每天早上喝咖啡。", pinyin: "wǒ měi tiān zǎo shang hē kā fēi.", english: "I drink coffee every morning." },
+      { hanzi: "周末我喜欢看电影。", pinyin: "zhōu mò wǒ xǐ huan kàn diàn yǐng.", english: "On weekends I like watching movies." },
+      { hanzi: "我们一起去吃饭吧。", pinyin: "wǒ men yì qǐ qù chī fàn ba.", english: "Let's go eat together." },
+      { hanzi: "这本书很有意思。", pinyin: "zhè běn shū hěn yǒu yì si.", english: "This book is very interesting." },
+      { hanzi: "我学习中文已经一年了。", pinyin: "wǒ xué xí zhōng wén yǐ jīng yì nián le.", english: "I have been studying Chinese for a year." },
+    ],
+  },
 ];
 
 export function findLesson(id: string | null | undefined): WritingLesson | undefined {
@@ -110,7 +137,17 @@ export function findLesson(id: string | null | undefined): WritingLesson | undef
   return WRITING_LESSONS.find((lesson) => lesson.id === id);
 }
 
-/** Total number of glyphs the learner writes to finish a lesson. */
+/** True for CJK ideographs — the only glyphs `hanzi-writer` can render strokes for. */
+export function isWritable(char: string): boolean {
+  return /[一-鿿]/.test(char);
+}
+
+/** The drawable characters of a text, with punctuation and spaces stripped out. */
+export function writableChars(hanzi: string): string[] {
+  return Array.from(hanzi).filter(isWritable);
+}
+
+/** Total number of glyphs the learner writes to finish a lesson (punctuation excluded). */
 export function countCharacters(lesson: WritingLesson): number {
-  return lesson.texts.reduce((sum, text) => sum + Array.from(text.hanzi).length, 0);
+  return lesson.texts.reduce((sum, text) => sum + writableChars(text.hanzi).length, 0);
 }

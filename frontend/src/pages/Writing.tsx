@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import {
   WRITING_LESSONS,
   countCharacters,
+  isWritable,
+  writableChars,
   type WritingLesson,
   type WritingText,
 } from "@/lib/writing-texts";
@@ -150,7 +152,7 @@ function DrawRunner({
   const [stats, setStats] = useState<RunnerStats>({ correct: 0, missed: 0 });
 
   const text = lesson.texts[textIndex];
-  const chars = useMemo(() => (text ? Array.from(text.hanzi) : []), [text]);
+  const chars = useMemo(() => (text ? writableChars(text.hanzi) : []), [text]);
   const finished = textIndex >= lesson.texts.length;
 
   function advance() {
@@ -209,7 +211,8 @@ function DrawRunner({
 }
 
 function normalize(value: string): string {
-  return value.replace(/\s+/g, "").trim();
+  // Compare on CJK glyphs only, so spaces and punctuation are optional for the learner.
+  return Array.from(value).filter(isWritable).join("");
 }
 
 function TypeRunner({
@@ -452,6 +455,20 @@ function MethodToggle({
   );
 }
 
+interface PromptCell {
+  char: string;
+  /** Index among writable glyphs, or null for punctuation/spaces. */
+  writableIndex: number | null;
+}
+
+function toPromptCells(hanzi: string): PromptCell[] {
+  let counter = 0;
+  return Array.from(hanzi).map((char) => ({
+    char,
+    writableIndex: isWritable(char) ? counter++ : null,
+  }));
+}
+
 function TextPrompt({
   text,
   activeCharIndex,
@@ -461,25 +478,22 @@ function TextPrompt({
   activeCharIndex?: number;
   hideHanzi?: boolean;
 }) {
-  const chars = Array.from(text.hanzi);
+  const cells = useMemo(() => toPromptCells(text.hanzi), [text]);
   return (
     <div className="flex flex-col items-center gap-2 text-center">
       <div className="text-2xl font-medium text-ink">{text.english}</div>
       <div className="text-sm text-muted-foreground">{text.pinyin}</div>
       {hideHanzi ? null : (
-        <div className="flex flex-wrap justify-center gap-1.5 mt-1" lang="zh-Hans" aria-hidden>
-          {chars.map((char, index) => (
+        <div className="flex flex-wrap justify-center gap-1 mt-1" lang="zh-Hans" aria-hidden>
+          {cells.map((cell, index) => (
             <span
-              key={`${char}-${index}`}
+              key={`${cell.char}-${index}`}
               className={cn(
-                "font-hanzi text-2xl leading-none px-1.5 py-0.5 rounded transition-colors",
-                activeCharIndex === undefined && "text-ink",
-                activeCharIndex !== undefined && index < activeCharIndex && "text-ink-soft",
-                activeCharIndex === index && "bg-seal/15 text-seal ring-1 ring-seal/40",
-                activeCharIndex !== undefined && index > activeCharIndex && "text-ink-soft/50",
+                "font-hanzi text-2xl leading-none px-1 py-0.5 rounded transition-colors",
+                cellToneClass(cell, activeCharIndex),
               )}
             >
-              {char}
+              {cell.char}
             </span>
           ))}
         </div>
@@ -487,10 +501,18 @@ function TextPrompt({
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mt-1">
         {activeCharIndex !== undefined
           ? "Write the highlighted character"
-          : "Type the characters for this text"}
+          : "Type the full text for this prompt"}
       </div>
     </div>
   );
+}
+
+function cellToneClass(cell: PromptCell, activeCharIndex?: number): string {
+  if (cell.writableIndex === null) return "text-ink-soft/40";
+  if (activeCharIndex === undefined) return "text-ink";
+  if (cell.writableIndex === activeCharIndex) return "bg-seal/15 text-seal ring-1 ring-seal/40";
+  if (cell.writableIndex < activeCharIndex) return "text-ink-soft";
+  return "text-ink-soft/50";
 }
 
 function WritingComplete({
