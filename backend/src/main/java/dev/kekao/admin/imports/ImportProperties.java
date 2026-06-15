@@ -28,6 +28,16 @@ import java.util.List;
  *                          has no CC-CEDICT entry. When false, the character is
  *                          imported with placeholder pinyin and an empty
  *                          meaning list (status stays DRAFT for editing).
+ * @param corpusListResources
+ *                          classpath resources listing characters (one per
+ *                          line) harvested from a corpus such as a classical
+ *                          novel. These are imported with no HSK level and stay
+ *                          {@code DRAFT} until an editor reviews them. Empty by
+ *                          default — opt in via {@code KEKAO_IMPORT_CORPUS_RESOURCES}.
+ * @param extraCedictResources
+ *                          additional CC-CEDICT subsets merged into the lookup
+ *                          index (e.g. the dictionary slice generated alongside
+ *                          a corpus list).
  */
 @ConfigurationProperties(prefix = "kekao.import")
 public record ImportProperties(
@@ -38,7 +48,9 @@ public record ImportProperties(
         List<Integer> hskLevels,
         String defaultLanguage,
         int maxMeaningsPerHanzi,
-        boolean failOnMissingCedict
+        boolean failOnMissingCedict,
+        List<String> corpusListResources,
+        List<String> extraCedictResources
 ) {
     public ImportProperties {
         if (cedictResource == null || cedictResource.isBlank()) {
@@ -71,5 +83,20 @@ public record ImportProperties(
         if (maxMeaningsPerHanzi <= 0) {
             maxMeaningsPerHanzi = 5;
         }
+        corpusListResources = sanitize(corpusListResources);
+        extraCedictResources = sanitize(extraCedictResources);
+    }
+
+    private static List<String> sanitize(List<String> values) {
+        if (values == null) {
+            return List.of();
+        }
+        List<String> cleaned = new ArrayList<>();
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                cleaned.add(value.strip());
+            }
+        }
+        return List.copyOf(cleaned);
     }
 }

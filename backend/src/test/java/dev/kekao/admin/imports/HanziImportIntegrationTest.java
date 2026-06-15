@@ -84,6 +84,32 @@ class HanziImportIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
+    void corpusImportLoadsMissingCharactersAsDraftWithNoHskLevel() throws Exception {
+        ImportProperties corpusProps = new ImportProperties(
+                null, "imports/cedict.sample.txt", null,
+                List.of("imports/hsk1.txt", "imports/hsk2.txt", "imports/hsk3.txt"),
+                List.of(1, 2, 3), "en", 5, false,
+                List.of("imports/three-kingdoms.txt"),
+                List.of("imports/three-kingdoms.cedict.txt"));
+        HanziImportService corpusService = new HanziImportService(
+                hanzi, translations, corpusProps, new CedictParser(), new HskListLoader());
+
+        corpusService.runImport();
+
+        // 曰 ("to say") is a classical-only character: present in the novel, not in HSK 1-3.
+        Optional<HanziEntity> yue = hanzi.findByCharacter("曰");
+        assertThat(yue).isPresent();
+        assertThat(yue.get().getHskLevel()).isNull();
+        assertThat(yue.get().getStatus()).isEqualTo(HanziStatus.DRAFT);
+        assertThat(yue.get().getPinyin()).isEqualTo("yuē");
+        assertThat(translations.findByHanziId(yue.get().getId())).isNotEmpty();
+
+        // The regular HSK import still ran alongside the corpus import.
+        assertThat(hanzi.findByCharacter("你")).isPresent();
+        assertThat(hanzi.count()).isGreaterThan(1000);
+    }
+
+    @Test
     void importIsIdempotent() throws Exception {
         HanziImportService.ImportReport first = service.runImport();
         long countAfterFirst = hanzi.count();

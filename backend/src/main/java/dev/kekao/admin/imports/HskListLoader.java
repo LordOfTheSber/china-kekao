@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Loads the {@code char -> hsk_level} mapping from a classpath resource.
@@ -46,6 +48,31 @@ public final class HskListLoader {
             String line;
             while ((line = reader.readLine()) != null) {
                 addLine(result, line, defaultLevel);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Loads a plain character list (one simplified character per line, with
+     * optional {@code #}-comments). Used for corpus lists that carry no HSK
+     * level. The order of first appearance is preserved.
+     */
+    public Set<String> loadCharacters(String resourceLocation) throws IOException {
+        Resource resource = resolver.getResource(toClasspath(resourceLocation));
+        if (!resource.exists()) {
+            throw new IOException("Corpus list resource not found: " + resourceLocation);
+        }
+        Set<String> result = new LinkedHashSet<>();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String trimmed = line.strip();
+                if (trimmed.isEmpty() || trimmed.startsWith("#")) {
+                    continue;
+                }
+                result.add(trimmed.split("\\s+")[0]);
             }
         }
         return result;
